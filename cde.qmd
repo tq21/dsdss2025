@@ -15,11 +15,9 @@ Our goal is to estimate the conditional density of $T$ given $X$, denoted by $p_
 
 ### Pooled logistic regression for estimating conditional densities
 
-One way to estimate the conditional density of $T$, given $X$ using HAL is through discretizing $T$. This technique has been considered in [Diáz and van der Laan (2011)](https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1356/html). In practice, this can be implemented via a pooled logistic regression. Specifically, consider a set of $k$ bins $\{[t_{j-1},t_j):j=1,\dots,k\}$ formed by $t_0,\dots,t_k$ that partitions $T$. Now, we parameterize the conditional density in terms of discrete hazards for each bin. Let $\tilde{\lambda}_j(X)=P(T\in[t_{j-1},t_j)\mid T\geq t_{j-1},X)$, that is, $\tilde{\lambda}_j$ is the discrete hazard of falling into bin $j$, given having "survived" up to $t_{j-1}$. Under this representation, the conditional density can be expressed as:
-$$
+One way to estimate the conditional density of $T$, given $X$ using HAL is through discretizing $T$. This technique has been considered in [Diáz and van der Laan (2011)](https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1356/html). In practice, this can be implemented via a pooled logistic regression. Specifically, consider a set of $k$ bins $\{[t_{j-1},t_j):j=1,\dots,k\}$ formed by $t_0,\dots,t_k$ that partitions $T$. Now, we parameterize the conditional density in terms of discrete hazards for each bin. Let $\tilde{\lambda}_j(X)=P(T\in[t_{j-1},t_j)\mid T\geq t_{j-1},X)$, that is, $\tilde{\lambda}_j$ is the discrete hazard of falling into bin $j$, given having "survived" up to $t_{j-1}$. Under this representation, the conditional density can be expressed as: $$
 p(t\mid X)=\sum_{j=1}^k\left(\tilde{\lambda}_j(X)\prod_{m=1}^{j-1}(1-\tilde{\lambda}_m(X))\right)I\{t\in [t_{j-1},t_j)\}.
-$$
-For $n$ independent units, the likelihood corresponds to the likelihood of an indicator in a repeated measures data set, where the outcome is an indicator of whether $T_i$ falls within a specific bin, i.e., $T_i\in(t_{\alpha-1},t_\alpha]$. For each subject, observations are repeated as many times as there are bins $[t_{\alpha-1},t_\alpha)$ prior to the bin in which $T_i$ lies in. One could then run a logistic regression with, for example, zero-order HAL basis, on this repeated data set to obtain the estimated bin-level conditional densities. Finally, a piecewise constant conditional density function over $\mathbb{R}$ can be obtained by normalizing each bin-level estimate by the corresponding bin width.
+$$ For $n$ independent units, the likelihood corresponds to the likelihood of an indicator in a repeated measures data set, where the outcome is an indicator of whether $T_i$ falls within a specific bin, i.e., $T_i\in(t_{\alpha-1},t_\alpha]$. For each subject, observations are repeated as many times as there are bins $[t_{\alpha-1},t_\alpha)$ prior to the bin in which $T_i$ lies in. One could then run a logistic regression with, for example, zero-order HAL basis, on this repeated data set to obtain the estimated bin-level conditional densities. Finally, a piecewise constant conditional density function over $\mathbb{R}$ can be obtained by normalizing each bin-level estimate by the corresponding bin width.
 
 Once we have mapped the discrete conditional density into a conditional density, we can use cross-validation based on the log-likelihood loss to select the number of bins $k$.
 
@@ -34,7 +32,7 @@ library(haldensify)
 library(plotly) # for interactive plots
 ```
 
-The \texttt{R} package \texttt{haldensify} implements the nonparametric conditional density estimation via pooled hazards regressions using HAL, as discussed above \citep{hejazi_efficient_2022,hejazi_haldensify_pkg_2022,hejazi_haldensify_joss_2022}.  Figure \ref{fig:eg_haldensify} shows the estimated (left pane) and the true (right pane) conditional densities of $A$ at $W_2=0$, over a grid of $W_1$. Note that the zero-order HAL conditional density estimator closely recovers the underlying density of $A$ in this example. 
+The \texttt{R} package \texttt{haldensify} implements the nonparametric conditional density estimation via pooled hazards regressions using HAL, as discussed above \citep{hejazi_efficient_2022,hejazi_haldensify_pkg_2022,hejazi_haldensify_joss_2022}. Figure \ref{fig:eg_haldensify} shows the estimated (left pane) and the true (right pane) conditional densities of $A$ at $W_2=0$, over a grid of $W_1$. Note that the zero-order HAL conditional density estimator closely recovers the underlying density of $A$ in this example.
 
 ### Simulating data
 
@@ -50,6 +48,7 @@ data <- sim_data_cde(n)
 ### Use the haldensify function to estimate the conditional density of A given W
 
 The below one liner uses the \texttt{haldensify} function to estimate the conditional density of $A$ given $W=(W_1,W_2)$ using zero-order HAL basis functions. The function automatically selects the number of bins via cross-validation based on the log-likelihood loss.
+
 ```{r, cache=TRUE, warning=FALSE}
 haldensify_fit <- haldensify(A = data$A,
                              W = data$W,
@@ -57,6 +56,7 @@ haldensify_fit <- haldensify(A = data$A,
 ```
 
 Let's plot the empirical risk (negative log-likelihood) as a function of the regularization parameter $\lambda$.
+
 ```{r, cache=TRUE}
 # empirical risk vs. lambda
 risk_vs_lambda <- plot(haldensify_fit)
@@ -66,6 +66,7 @@ risk_vs_lambda
 ### Plot the estimated conditional density
 
 Now, let's visualize the estimated conditional density of $A$ at $W_2=0$ over a grid of $W_1$ values, and compare it with the true conditional density.
+
 ```{r}
 # compute true conditional densities over a grid
 W1_vals <- seq(-2, 2, length.out = 20)

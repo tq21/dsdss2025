@@ -23,9 +23,9 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "hal_short_course",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites.\n\n1 + 1\n\n[1] 2"
+    "text": "This page contains slides and code examples for the short course on Highly Adaptive Lasso and Targeted Learning at the DahShu Data Science Symposium 2025."
   },
   {
     "objectID": "cde.html",
@@ -40,5 +40,131 @@
     "title": "Estimating conditional densities using HAL",
     "section": "Problem setup",
     "text": "Problem setup\nWe consider the following problem setup:\nSuppose our observed data contains \\(n\\) i.i.d copies of the random variable \\(O=(X,T)\\sim P_0\\in\\mathcal{M}\\), where \\(X\\in\\mathbb{R}^d\\) is a vector of covariates, \\(T\\in\\mathbb{R}\\). The statistical model \\(\\mathcal{M}\\) is nonparametric.\nOur goal is to estimate the conditional density of \\(T\\) given \\(X\\), denoted by \\(p_0(t\\mid X)\\).\n\nPooled logistic regression for estimating conditional densities\nOne way to estimate the conditional density of \\(T\\), given \\(X\\) using HAL is through discretizing \\(T\\). This technique has been considered in Diáz and van der Laan (2011). In practice, this can be implemented via a pooled logistic regression. Specifically, consider a set of \\(k\\) bins \\(\\{[t_{j-1},t_j):j=1,\\dots,k\\}\\) formed by \\(t_0,\\dots,t_k\\) that partitions \\(T\\). Now, we parameterize the conditional density in terms of discrete hazards for each bin. Let \\(\\tilde{\\lambda}_j(X)=P(T\\in[t_{j-1},t_j)\\mid T\\geq t_{j-1},X)\\), that is, \\(\\tilde{\\lambda}_j\\) is the discrete hazard of falling into bin \\(j\\), given having “survived” up to \\(t_{j-1}\\). Under this representation, the conditional density can be expressed as: \\[\np(t\\mid X)=\\sum_{j=1}^k\\left(\\tilde{\\lambda}_j(X)\\prod_{m=1}^{j-1}(1-\\tilde{\\lambda}_m(X))\\right)I\\{t\\in [t_{j-1},t_j)\\}.\n\\] For \\(n\\) independent units, the likelihood corresponds to the likelihood of an indicator in a repeated measures data set, where the outcome is an indicator of whether \\(T_i\\) falls within a specific bin, i.e., \\(T_i\\in(t_{\\alpha-1},t_\\alpha]\\). For each subject, observations are repeated as many times as there are bins \\([t_{\\alpha-1},t_\\alpha)\\) prior to the bin in which \\(T_i\\) lies in. One could then run a logistic regression with, for example, zero-order HAL basis, on this repeated data set to obtain the estimated bin-level conditional densities. Finally, a piecewise constant conditional density function over \\(\\mathbb{R}\\) can be obtained by normalizing each bin-level estimate by the corresponding bin width.\nOnce we have mapped the discrete conditional density into a conditional density, we can use cross-validation based on the log-likelihood loss to select the number of bins \\(k\\).\n\n\nLoading required packages\nWe first load the required packages.\n\nlibrary(haldensify)\nlibrary(plotly) # for interactive plots\n\nThe package implements the nonparametric conditional density estimation via pooled hazards regressions using HAL, as discussed above . Figure \\(\\ref{fig:eg_haldensify}\\) shows the estimated (left pane) and the true (right pane) conditional densities of \\(A\\) at \\(W_2=0\\), over a grid of \\(W_1\\). Note that the zero-order HAL conditional density estimator closely recovers the underlying density of \\(A\\) in this example.\n\n\nSimulating data\nLet’s consider a setting where we are tasked to estimate the generalized propensity score (conditional density of a continuous treatment given covariates). This task could arise in the context of, for example, estimating the effect of a stochastic intervention on a continuous treatment. Suppose researchers collect two baseline covariates \\(W_1\\) and \\(W_2\\), each following a standard normal distribution. Suppose the treatment \\(A\\) is a continuous variable following a normal distribution with a mean given by \\(1+0.3W_1-1.5W_2\\). To introduce some heteroskedasticity, we set its standard deviation to \\(2+0.3|W1|\\).\n\nset.seed(75681)\nsource(\"dgps/sim_data_cde.R\")\nn &lt;- 2000\ndata &lt;- sim_data_cde(n)\n\n\n\nUse the haldensify function to estimate the conditional density of A given W\nThe below one liner uses the function to estimate the conditional density of \\(A\\) given \\(W=(W_1,W_2)\\) using zero-order HAL basis functions. The function automatically selects the number of bins via cross-validation based on the log-likelihood loss.\n\nhaldensify_fit &lt;- haldensify(A = data$A,\n                             W = data$W,\n                             lambda_seq = exp(seq(-0.1, -10, length = 300)))\n\nWarning in (function (X, Y, formula = NULL, X_unpenalized = NULL, max_degree = ifelse(ncol(X) &gt;= : Some fit_control arguments are neither default nor glmnet/cv.glmnet arguments: n_folds; \nThey will be removed from fit_control\n\n\nLet’s plot the empirical risk (negative log-likelihood) as a function of the regularization parameter \\(\\lambda\\).\n\n# empirical risk vs. lambda\nrisk_vs_lambda &lt;- plot(haldensify_fit)\nrisk_vs_lambda\n\n\n\n\n\n\n\n\n\n\nPlot the estimated conditional density\nNow, let’s visualize the estimated conditional density of \\(A\\) at \\(W_2=0\\) over a grid of \\(W_1\\) values, and compare it with the true conditional density.\n\n# compute true conditional densities over a grid\nW1_vals &lt;- seq(-2, 2, length.out = 20)\nW2_fixed &lt;- 0\nA_vals &lt;- seq(-2, 6, length.out = 30)\ngrid &lt;- expand.grid(W1 = W1_vals,\n                    W2 = W2_fixed, \n                    A = A_vals)\ngrid$true_dens &lt;- sim_data_cde(n, grid = grid)$A\ngrid$pred_dens &lt;- predict(haldensify_fit, \n                          new_A = grid$A,\n                          new_W = grid[, c(\"W1\", \"W2\")])\npred_dens_mat &lt;- matrix(grid$pred_dens, \n                        nrow = length(A_vals), \n                        ncol = length(W1_vals),\n                        byrow = FALSE)\ntrue_dens_mat &lt;- matrix(grid$true_dens, \n                        nrow = length(A_vals), \n                        ncol = length(W1_vals),\n                        byrow = FALSE)\n\nplt_pred &lt;- plot_ly(x = A_vals, y = W1_vals, z = pred_dens_mat, \n        colorscale = \"Greens\") %&gt;%\n  add_surface() %&gt;% \n  layout(title = list(text = \"Estimated Conditional Density\", \n                      font = list(size = 18, color = \"black\"),\n                      yref = \"container\", \n                      y = 0.98),\n         scene = list(xaxis = list(title = \"A\", titlefont = list(size = 14)),\n                      yaxis = list(title = \"W1\", titlefont = list(size = 14)),\n                      zaxis = list(title = \"Density\", \n                                   titlefont = list(size = 14), \n                                   range = c(0, 0.2)),\n                      camera = list(eye = list(x = 1.5, y = 1.5, z = 1))),\n         legend = list(x = 0.8, y = 1, font = list(size = 12)))\n\nplt_true &lt;- plot_ly(x = A_vals, y = W1_vals, z = true_dens_mat, \n        colorscale = \"Reds\") %&gt;%\n  add_surface() %&gt;%\n  layout(title = list(text = \"True Conditional Density\", \n                      font = list(size = 18, color = \"black\"),\n                      yref = \"container\", \n                      y = 0.98),\n         scene = list(xaxis = list(title = \"A\", titlefont = list(size = 14)),\n                      yaxis = list(title = \"W1\", titlefont = list(size = 14)),\n                      zaxis = list(title = \"Density\", \n                                   titlefont = list(size = 14), \n                                   range = c(0, 0.2)),\n                      camera = list(eye = list(x = 1.5, y = 1.5, z = 1))),\n         legend = list(x = 0.8, y = 1, font = list(size = 12)))\n\n# plot the estimated conditional density\nplt_pred\n# plot the true conditional density\nplt_true"
+  },
+  {
+    "objectID": "atmle.html",
+    "href": "atmle.html",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "",
+    "text": "In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD)."
+  },
+  {
+    "objectID": "atmle.html#introduction",
+    "href": "atmle.html#introduction",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "",
+    "text": "In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD)."
+  },
+  {
+    "objectID": "atmle.html#problem-setup",
+    "href": "atmle.html#problem-setup",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Problem setup",
+    "text": "Problem setup\nSuppose we observe \\(n\\) independent and identically distributed observations of the random variable \\(O=(S,W,A,Y)\\sim P_0\\in\\mathcal{M}\\). Here, \\(S\\in\\{0,1\\}\\) indicates whether the patient belongs to the RCT; \\(W\\in\\mathbb{R}^d\\) represents a set of baseline covariates; \\(A\\in\\{0,1\\}\\) denotes treatment assignment; and \\(Y\\in\\mathbb{R}\\) is the clinical outcome of interest. We consider settings where both the RCT and external data include treatment and control arms. Although data fusion can serve many goals, here we focus on improving precision in estimating the treatment effect in the RCT."
+  },
+  {
+    "objectID": "atmle.html#candidate-estimands",
+    "href": "atmle.html#candidate-estimands",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Candidate estimands",
+    "text": "Candidate estimands\nTo define the estimands, we ask two questions:\n\nWhat treatment effect do we want to learn?\nOver what population distribution should this effect be averaged?\n\nFor the first question, since our interest lies in refining improving the precision of the treatment effect in the RCT, we define the effect within the trial (\\(S=1\\)). For the second question, we consider two choices: averaging over the pooled covariate distribution from both the RCT and external data, or averaging over the RCT-only covariate distribution.\n\nEstimand 1: treatment effect in the RCT averaged over the pooled covariate distribution\nWe first focus on the estimand that averages over the pooled covariate distribution. Formally, we define \\[\n\\Psi_1(P)=E_{P_W}[E_P(Y_1-Y_0\\mid S=1,W)],\n\\] which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where \\(P_W\\) is the distribution of \\(W\\) in the pooled population. Identification requires the following assumptions:\n\nA1: \\((Y_0,Y_1)\\perp A\\mid S=1,W\\) (exchangeability due to randomization in the RCT);\nA2: \\(0&lt;P(A=1\\mid S=1,W)&lt;1\\) (treatment positivity in the RCT);\nA3: \\(P(S=1\\mid W)&gt;0\\) (positivity of trial participation in the pooled population).\n\nUnder A1–A3, the estimand is identified as \\[\n\\Psi_1(P_0)=E_0[E_0(Y\\mid S=1,W,A=1)-E_0(Y\\mid S=1,W,A=0)],\n\\] where the outer expectation is taken over the pooled distribution of \\(W\\).\n\n\nEstimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution\nNext, we consider the estimand that averages over the RCT-only covariate distribution. Formally, we define \\[\n\\Psi_2(P)=E_{P_{W\\mid S=1}}[E_P(Y_1-Y_0\\mid S=1,W)],\n\\] which represents the treatment effect within the trial, averaged over the covariate distribution of the RCT population. Identification requires only A1 and A2. No trial-enrollment positivity assumption on \\(S\\) is needed because both the inner and outer expectations are restricted to the \\(S=1\\) stratum. Under A1 and A2, the estimand is identified as \\[\n\\Psi_2(P_0)=E_0[E_0(Y\\mid S=1,W,A=1)-E_0(Y\\mid S=1,W,A=0)\\mid S=1],\n\\] where the outer expectation is taken over the covariate distribution of the RCT population."
+  },
+  {
+    "objectID": "atmle.html#loading-required-packages",
+    "href": "atmle.html#loading-required-packages",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Loading required packages",
+    "text": "Loading required packages\nWe first load the required packages.\n\nlibrary(atmle)"
+  },
+  {
+    "objectID": "atmle.html#data-summary",
+    "href": "atmle.html#data-summary",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Data summary",
+    "text": "Data summary"
+  },
+  {
+    "objectID": "atmle.html#candidate-estimators",
+    "href": "atmle.html#candidate-estimators",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Candidate estimators",
+    "text": "Candidate estimators\n\nAn unadjusted estimator\n\n\nA standard TMLE estimator\n\n\nAdaptive-TMLE estimator"
+  },
+  {
+    "objectID": "atmle.html#results",
+    "href": "atmle.html#results",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Results",
+    "text": "Results"
+  },
+  {
+    "objectID": "atmle.html#interpreting-the-outputs",
+    "href": "atmle.html#interpreting-the-outputs",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "Interpreting the outputs",
+    "text": "Interpreting the outputs"
+  },
+  {
+    "objectID": "atmle.html#references",
+    "href": "atmle.html#references",
+    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "section": "References",
+    "text": "References\nMark van der Laan, Sky Qiu & Lars van der Laan (2024). Adaptive-TMLE for the Average Treatment Effect based on Randomized Controlled Trial Augmented with Real-World Data. In press at Journal of Causal inference. [Paper]\nSky Qiu, Jens Tarp, Andrew Mertens & Mark van der Laan (2025). An Estimator-Robust Design for Augmenting Randomized Controlled Trial with External Real-World Data. arXiv preprint. [Paper]"
+  },
+  {
+    "objectID": "index.html#schedule",
+    "href": "index.html#schedule",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "Schedule",
+    "text": "Schedule\n\n\n\nTime\nTopic\nLinks to materials"
+  },
+  {
+    "objectID": "index.html#environment-setup",
+    "href": "index.html#environment-setup",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "Environment setup",
+    "text": "Environment setup\n\nR (≥ 4.3) installed.\nRecommended IDE: RStudio.\nR packages required:\n\n\ninstall.packages(\"hal9001\")\ninstall.packages(\"haldensify\")\nremotes::install_github(\"tlverse/sl3\")\nremotes::install_github(\"tq21/atmle\")"
+  },
+  {
+    "objectID": "index.html#faq",
+    "href": "index.html#faq",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "FAQ",
+    "text": "FAQ"
+  },
+  {
+    "objectID": "index.html#relevant-bookspapers-for-this-short-course",
+    "href": "index.html#relevant-bookspapers-for-this-short-course",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "Relevant books/papers for this short course",
+    "text": "Relevant books/papers for this short course\n\nvan der Laan, Mark and Sherri Rose (2011) Targeted Learning: Causal Inference for Observational and Experimental Data. Springer Science & Business Media. [Link]\nvan der Laan, Mark and Sherri Rose (2018) Targeted Learning in Data Science: Causal Inference for Complex Longitudinal Studies. Springer Science & Business Media. [Link]\nvan der Laan, Mark. “A generally efficient targeted minimum loss based estimator based on the highly adaptive lasso.” The international journal of biostatistics 13.2 (2017). [Link]\nBenkeser, David, and Mark van der Laan. “The highly adaptive lasso estimator.” 2016 IEEE international conference on data science and advanced analytics (DSAA). IEEE, 2016. [Link]\nvan der Laan, Mark. “Higher order spline highly adaptive lasso estimators of functional parameters: Pointwise asymptotic normality and uniform convergence rates.” arXiv preprint arXiv:2301.13354 (2023). [Link]\nvan der Laan, Lars, Marco Carone, Alex Luedtke, and Mark van der Laan. “Adaptive debiased machine learning using data-driven model selection techniques.” arXiv preprint arXiv:2307.12544 (2023). [Link]\nvan der Laan, Mark, Sky Qiu, Jens Tarp, and Lars van der Laan. “Adaptive-TMLE for the average treatment effect based on randomized controlled trial augmented with real-world data.” arXiv preprint arXiv:2405.07186 (2024). [Link]\nQiu, Sky, Jens Tarp, Andrew Mertens, and Mark van der Laan. “An estimator-robust design for augmenting randomized controlled trial with external real-world data.” arXiv preprint arXiv:2501.17835 (2025). [Link]\nShirakawa, Toru, Yi Li, Yulun Wu, Sky Qiu, Yuxuan Li, Mingduo Zhao, Hiroyasu Iso, and Mark van der Laan. “Longitudinal targeted minimum loss-based estimation with temporal-difference heterogeneous transformer.” Proceedings of the 41st International Conference on Machine Learning, PMLR 235:45097-45113 (2024). [Link]"
+  },
+  {
+    "objectID": "index.html#additional-resources",
+    "href": "index.html#additional-resources",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "Additional resources",
+    "text": "Additional resources\n\nCenter for Targeted Machine Learning and Causal Inference at Berkeley: https://ctml.berkeley.edu/\nIntroduction to causal inference by Maya Petersen and Laura Balzer: https://ctml.berkeley.edu/introduction-causal-inference\nTargeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): https://tlverse.org/tlverse-handbook/\nCheck out TL Revolution YouTube channel for FDA funded webinar series on Targeted Learning:"
+  },
+  {
+    "objectID": "index.html#license",
+    "href": "index.html#license",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "License",
+    "text": "License\n\nSlides and code examples © 2025 by the authors.\nCode is MIT-licensed unless noted.\n\n\n\nMaintainers & contact\nFor questions or issues, open a GitHub issue or email sky.qiu@berkeley.edu."
+  },
+  {
+    "objectID": "index.html#welcome-to-the-short-course",
+    "href": "index.html#welcome-to-the-short-course",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "",
+    "text": "This page contains slides and code examples for the short course on Highly Adaptive Lasso and Targeted Learning at the DahShu Data Science Symposium 2025."
+  },
+  {
+    "objectID": "index.html#course-videos",
+    "href": "index.html#course-videos",
+    "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
+    "section": "Course Videos",
+    "text": "Course Videos\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nhttps://www.youtube.com/@putnamdatasciences1309/videos\ntlverse handbook, any links to courses, videos, etc."
   }
 ]

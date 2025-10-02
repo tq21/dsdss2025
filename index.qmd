@@ -1,11 +1,101 @@
 ---
-title: "hal_short_course"
+title: "Highly Adaptive Lasso and Targeted Learning 📿🎯"
+subtitle: "Short course"
+author: "Mark van der Laan (UC Berkeley) and Sky Qiu (UC Berkeley)" 
+date: last-modified 
+format: html
 ---
 
-This is a Quarto website.
+## Welcome to the short course!
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+This page contains slides and code examples for the short course on Highly Adaptive Lasso and Targeted Learning at the DahShu Data Science Symposium 2025.
 
-```{r}
-1 + 1
+## Schedule
+
+| Time | Topic | Links to materials |
+|------|-------|--------------------|
+|      |       |                    |
+|      |       |                    |
+|      |       |                    |
+|      |       |                    |
+|      |       |                    |
+
+## Environment setup
+
+-   R (≥ 4.3) installed.
+-   Recommended IDE: RStudio.
+-   R packages required:
+
+```{r, eval=FALSE}
+install.packages("hal9001")
+install.packages("haldensify")
+remotes::install_github("tlverse/sl3")
+remotes::install_github("tq21/atmle")
 ```
+
+## Relevant books/papers for this short course
+
+-   van der Laan, Mark and Sherri Rose (2011) Targeted Learning: Causal Inference for Observational and Experimental Data. Springer Science & Business Media. [\[Link\]](https://link.springer.com/book/10.1007/978-1-4419-9782-1)
+
+-   van der Laan, Mark and Sherri Rose (2018) Targeted Learning in Data Science: Causal Inference for Complex Longitudinal Studies. Springer Science & Business Media. [\[Link\]](https://link.springer.com/book/10.1007/978-3-319-65304-4)
+
+-   van der Laan, Mark. “A generally efficient targeted minimum loss based estimator based on the highly adaptive lasso.” The international journal of biostatistics 13.2 (2017). [\[Link\]](https://www.degruyterbrill.com/document/doi/10.1515/ijb-2015-0097/html)
+
+-   Benkeser, David, and Mark van der Laan. “The highly adaptive lasso estimator.” 2016 IEEE international conference on data science and advanced analytics (DSAA). IEEE, 2016. [\[Link\]](https://pmc.ncbi.nlm.nih.gov/articles/PMC5662030/)
+
+-   van der Laan, Mark. “Higher order spline highly adaptive lasso estimators of functional parameters: Pointwise asymptotic normality and uniform convergence rates.” arXiv preprint arXiv:2301.13354 (2023). [\[Link\]](https://arxiv.org/abs/2301.13354)
+
+-   van der Laan, Lars, Marco Carone, Alex Luedtke, and Mark van der Laan. “Adaptive debiased machine learning using data-driven model selection techniques.” arXiv preprint arXiv:2307.12544 (2023). [\[Link\]](https://arxiv.org/abs/2307.12544)
+
+-   van der Laan, Mark, Sky Qiu, Jens Tarp, and Lars van der Laan. “Adaptive-TMLE for the average treatment effect based on randomized controlled trial augmented with real-world data.” arXiv preprint arXiv:2405.07186 (2024). [\[Link\]](https://arxiv.org/abs/2405.07186)
+
+-   Qiu, Sky, Jens Tarp, Andrew Mertens, and Mark van der Laan. “An estimator-robust design for augmenting randomized controlled trial with external real-world data.” arXiv preprint arXiv:2501.17835 (2025). [\[Link\]](https://arxiv.org/abs/2501.17835)
+
+-   Shirakawa, Toru, Yi Li, Yulun Wu, Sky Qiu, Yuxuan Li, Mingduo Zhao, Hiroyasu Iso, and Mark van der Laan. “Longitudinal targeted minimum loss-based estimation with temporal-difference heterogeneous transformer.” Proceedings of the 41st International Conference on Machine Learning, PMLR 235:45097-45113 (2024). [\[Link\]](https://arxiv.org/abs/2404.04399)
+
+## Additional resources
+
+- Center for Targeted Machine Learning and Causal Inference at Berkeley: [https://ctml.berkeley.edu/](https://ctml.berkeley.edu/)
+
+- Introduction to causal inference by Maya Petersen and Laura Balzer: [https://ctml.berkeley.edu/introduction-causal-inference](https://ctml.berkeley.edu/introduction-causal-inference)
+
+- Targeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): [https://tlverse.org/tlverse-handbook/](https://tlverse.org/tlverse-handbook/)
+
+- Check out [TL Revolution YouTube channel](https://www.youtube.com/@putnamdatasciences1309/videos) for FDA funded webinar series on Targeted Learning:
+
+<div style="max-width: 480px; margin: auto;">
+  {{< video https://www.youtube.com/watch?v=PrPNP5RVcLg >}}
+</div>
+
+<div style="max-width: 480px; margin: auto;">
+  {{< video https://www.youtube.com/watch?v=8Q9dfW3oOi4 >}}
+</div>
+
+<div style="max-width: 480px; margin: auto;">
+  {{< video https://www.youtube.com/watch?v=ANuvSrkJ3Ag >}}
+</div>
+
+<div style="max-width: 480px; margin: auto;">
+  {{< video https://www.youtube.com/watch?v=eSytQfqZsv8 >}}
+</div>
+
+<div style="max-width: 480px; margin: auto;">
+  {{< video https://www.youtube.com/watch?v=YnXVAtzF4ss >}}
+</div>
+
+<div style="max-width: 480px; margin: auto;">
+  {{< video https://www.youtube.com/watch?v=qr5JolEAuJU >}}
+</div>
+
+## License
+
+-   Slides and code examples © 2025 by the authors.
+-   Code is MIT-licensed unless noted.
+
+------------------------------------------------------------------------
+
+### Maintainers & contact
+
+For questions or issues, open a GitHub [issue](https://github.com/tq21/hal_short_course/issues) or email [sky.qiu\@berkeley.edu](mailto:sky.qiu@berkeley.edu).
+
+------------------------------------------------------------------------

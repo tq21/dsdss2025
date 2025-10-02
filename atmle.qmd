@@ -1,0 +1,81 @@
+---
+title: "Adaptive-TMLE for augmenting RCT with external RWD"
+format: html
+---
+
+## Introduction
+
+In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD).
+
+## Problem setup
+
+Suppose we observe $n$ independent and identically distributed observations of the random variable $O=(S,W,A,Y)\sim P_0\in\mathcal{M}$. Here, $S\in\{0,1\}$ indicates whether the patient belongs to the RCT; $W\in\mathbb{R}^d$ represents a set of baseline covariates; $A\in\{0,1\}$ denotes treatment assignment; and $Y\in\mathbb{R}$ is the clinical outcome of interest. We consider settings where both the RCT and external data include treatment and control arms. Although data fusion can serve many goals, here we focus on improving precision in estimating the treatment effect in the RCT.
+
+## Candidate estimands
+
+To define the estimands, we ask two questions: 
+
+1. What treatment effect do we want to learn?
+
+2. Over what population distribution should this effect be averaged?
+
+For the first question, since our interest lies in refining improving the precision of the treatment effect in the RCT, we define the effect within the trial ($S=1$). For the second question, we consider two choices: averaging over the **pooled** covariate distribution from both the RCT and external data, or averaging over the **RCT-only** covariate distribution.
+
+### Estimand 1: treatment effect in the RCT averaged over the pooled covariate distribution
+
+We first focus on the estimand that averages over the pooled covariate distribution. Formally, we define
+$$
+\Psi_1(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
+$$
+which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where $P_W$ is the distribution of $W$ in the pooled population. Identification requires the following assumptions:
+
+- A1: $(Y_0,Y_1)\perp A\mid S=1,W$ (exchangeability due to randomization in the RCT);
+
+- A2: $0<P(A=1\mid S=1,W)<1$ (treatment positivity in the RCT);
+
+- A3: $P(S=1\mid W)>0$ (positivity of trial participation in the pooled population).
+
+Under A1–A3, the estimand is identified as
+$$
+\Psi_1(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)],
+$$
+where the outer expectation is taken over the pooled distribution of $W$.
+
+### Estimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution
+
+Next, we consider the estimand that averages over the RCT-only covariate distribution. Formally, we define
+$$
+\Psi_2(P)=E_{P_{W\mid S=1}}[E_P(Y_1-Y_0\mid S=1,W)],
+$$
+which represents the treatment effect within the trial, averaged over the covariate distribution of the RCT population. Identification requires only A1 and A2. No trial-enrollment positivity assumption on $S$ is needed because both the inner and outer expectations are restricted to the $S=1$ stratum. Under A1 and A2, the estimand is identified as
+$$
+\Psi_2(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)\mid S=1],
+$$
+where the outer expectation is taken over the covariate distribution of the RCT population.
+
+## Loading required packages
+
+We first load the required packages.
+```{r, message=FALSE}
+library(atmle)
+```
+
+## Data summary
+
+## Candidate estimators
+
+### An unadjusted estimator
+
+### A standard TMLE estimator
+
+### Adaptive-TMLE estimator
+
+## Results
+
+## Interpreting the outputs
+
+## References
+
+Mark van der Laan, Sky Qiu & Lars van der Laan (2024). Adaptive-TMLE for the Average Treatment Effect based on Randomized Controlled Trial Augmented with Real-World Data. In press at Journal of Causal inference. [\[Paper\]](https://arxiv.org/abs/2405.07186)
+
+Sky Qiu, Jens Tarp, Andrew Mertens & Mark van der Laan (2025). An Estimator-Robust Design for Augmenting Randomized Controlled Trial with External Real-World Data. arXiv preprint. [\[Paper\]](https://arxiv.org/abs/2501.17835)
