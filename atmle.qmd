@@ -74,13 +74,26 @@ data <- sim_data(n=500)
 
 ## Candidate estimators
 
-### An unadjusted estimator
-
 ### A standard TMLE estimator
+
+```{r}
+tmle_res <- nonparametric(data = data,
+                          S = "S",
+                          W = c("W1", "W2", "W3", "W4"),
+                          A = "A",
+                          Y = "Y",
+                          family = "gaussian",
+                          Pi_method = "glm",
+                          g_method = "glm",
+                          Q_method = "glm",
+                          Q_pooling = FALSE,
+                          v_folds = 5)
+```
+
 
 ### Adaptive-TMLE estimator
 
-```{r}
+```{r, cache=TRUE}
 sl_lib <- list(Lrnr_glm$new(),
                Lrnr_dbarts$new(),
                Lrnr_xgboost$new())
@@ -107,12 +120,22 @@ Let's study the output of it a bit more closely.
 First, let's examine the point estimates. The pooled ATE estimate is 1.37, while the bias-correct ATE estimate is 1.14. We also see that the estimate of the bias is 0.23. Indeed, the bias correction is pushing us closer to the truth, which is 1.15.
 
 ```{r}
-df_plot <- data.frame(Estimator = c("Pooled-ATE", "Bias-corrected ATE"),
-                      Estimate = c(atmle_res$psi_tilde_est, atmle_res$est),
-                      Lower = c(atmle_res$psi_tilde_lower, atmle_res$lower),
-                      Upper = c(atmle_res$psi_tilde_upper, atmle_res$upper))
+df_plot <- data.frame(Estimator = c("Standard TMLE",
+                                    "Pooled-ATE", 
+                                    "Bias-corrected ATE (A-TMLE)"),
+                      Estimate = c(tmle_res$psi_pooled_W, 
+                                   atmle_res$psi_tilde_est, 
+                                   atmle_res$est),
+                      Lower = c(tmle_res$lower_pooled_W, 
+                                atmle_res$psi_tilde_lower, 
+                                atmle_res$lower),
+                      Upper = c(tmle_res$upper_pooled_W, 
+                                atmle_res$psi_tilde_upper, 
+                                atmle_res$upper))
 df_plot$Estimator <- factor(df_plot$Estimator, 
-                            levels = c("Bias-corrected ATE", "Pooled-ATE"))
+                            levels = c("Standard TMLE",
+                                       "Bias-corrected ATE (A-TMLE)", 
+                                       "Pooled-ATE"))
 ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   geom_point() +
   geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, size = 0.8) +
@@ -125,8 +148,6 @@ ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
         plot.title = element_text(hjust = 0.5)) +
     coord_flip()
 ```
-
-
 
 ## Results
 
