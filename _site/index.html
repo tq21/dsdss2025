@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark van der Laan (UC Berkeley) and Sky Qiu (UC Berkeley)">
-<meta name="dcterms.date" content="2025-10-02">
+<meta name="dcterms.date" content="2025-10-05">
 
 <title>Highly Adaptive Lasso and Targeted Learning 📿🎯 – DahShu Data Science Symposium 2025</title>
 <style>
@@ -128,10 +128,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="nav-link active" href="./index.html" aria-current="page"> 
 <span class="menu-text">Home</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./about.html"> 
-<span class="menu-text">About</span></a>
-  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -183,7 +179,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 2, 2025</p>
+      <p class="date">October 5, 2025</p>
     </div>
   </div>
   
@@ -201,38 +197,68 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="schedule" class="level2">
 <h2 class="anchored" data-anchor-id="schedule">Schedule</h2>
+<p>Here is the schedule for the day (9am-5pm, October 18th, 2025):</p>
 <table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Time</th>
-<th>Topic</th>
-<th>Links to materials</th>
-</tr>
-</thead>
 <tbody>
 <tr class="odd">
-<td></td>
-<td></td>
-<td></td>
+<td><strong>Time</strong></td>
+<td><strong>Topic</strong></td>
+<td><strong>Links to materials</strong></td>
 </tr>
 <tr class="even">
-<td></td>
-<td></td>
+<td>9am-10.20am</td>
+<td>Introduction to Targeted Learning; The Roadmap; Super Learning; TMLE</td>
 <td></td>
 </tr>
 <tr class="odd">
-<td></td>
-<td></td>
+<td>10.20am-10.40am</td>
+<td>Coffee/Tea break, Q&amp;A</td>
 <td></td>
 </tr>
 <tr class="even">
-<td></td>
-<td></td>
-<td></td>
+<td>10.40am-12pm</td>
+<td>Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, <code>hal9001</code> software</td>
+<td><ul>
+<li><code>hal9001</code> <a href="https://tlverse.org/hal9001/articles/intro_hal9001.html">[vignette]</a></li>
+<li>Estimating conditional average treatment effects <a href="./cate.html">[code example]</a></li>
+<li>Estimating conditional densities <a href="./cde.html">[code example]</a></li>
+</ul></td>
 </tr>
 <tr class="odd">
+<td>12pm-1pm</td>
+<td>Lunch break</td>
 <td></td>
+</tr>
+<tr class="even">
+<td>1pm-2.20pm</td>
+<td>Higher order splines, examples of 1st and 2nd order HAL, rate of convergence, HAL-TMLE</td>
+<td><ul>
+<li>Examples of the k-th order spline representation: <a href="./k1d3.html">[k=1, d=3]</a>, <a href="./k2d3.html">[k=2, d=3]</a></li>
+<li>Specifying a diverse super learner library including different specifications (smoothness orders, subspaces) of candidate HAL learners <a href="./hal_dsl.html">[code example]</a></li>
+</ul></td>
+</tr>
+<tr class="odd">
+<td>2.20pm-2.40pm</td>
+<td>Coffee/Tea break, Q&amp;A</td>
 <td></td>
+</tr>
+<tr class="even">
+<td>2.40pm-3.40pm</td>
+<td>HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs</td>
+<td><ul>
+<li>Adaptive-TMLE for augmenting an RCT with external RWD <a href="./atmle.html">[code example]</a></li>
+</ul></td>
+</tr>
+<tr class="odd">
+<td>3.40pm-4.40pm</td>
+<td>L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE</td>
+<td><ul>
+<li>DeepLTMLE example</li>
+</ul></td>
+</tr>
+<tr class="even">
+<td>4.40pm-5pm</td>
+<td>Closing remarks, Q&amp;A</td>
 <td></td>
 </tr>
 </tbody>
@@ -269,10 +295,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="additional-resources" class="level2">
 <h2 class="anchored" data-anchor-id="additional-resources">Additional resources</h2>
 <ul>
-<li><p>Center for Targeted Machine Learning and Causal Inference at Berkeley: <a href="https://ctml.berkeley.edu/">https://ctml.berkeley.edu/</a></p></li>
-<li><p>Introduction to causal inference by Maya Petersen and Laura Balzer: <a href="https://ctml.berkeley.edu/introduction-causal-inference">https://ctml.berkeley.edu/introduction-causal-inference</a></p></li>
-<li><p>Targeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): <a href="https://tlverse.org/tlverse-handbook/">https://tlverse.org/tlverse-handbook/</a></p></li>
-<li><p>Check out <a href="https://www.youtube.com/@putnamdatasciences1309/videos">TL Revolution YouTube channel</a> for FDA funded webinar series on Targeted Learning:</p></li>
+<li><p>Center for Targeted Machine Learning and Causal Inference at Berkeley: <a href="https://ctml.berkeley.edu/" class="uri">https://ctml.berkeley.edu/</a></p></li>
+<li><p>Introduction to causal inference by Maya Petersen and Laura Balzer: <a href="https://ctml.berkeley.edu/introduction-causal-inference" class="uri">https://ctml.berkeley.edu/introduction-causal-inference</a></p></li>
+<li><p>Targeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): <a href="https://tlverse.org/tlverse-handbook/" class="uri">https://tlverse.org/tlverse-handbook/</a></p></li>
+<li><p>Kat Hoffman’s blog and tutorial on Targeted Learning: <a href="https://www.khstats.com/blog/tmle/tutorial" class="uri">https://www.khstats.com/blog/tmle/tutorial</a></p></li>
+<li><p>Check out <a href="https://www.youtube.com/@putnamdatasciences1309/videos">TL Revolution’s YouTube channel</a> for FDA funded webinar series on Targeted Learning:</p></li>
 </ul>
 <div style="max-width: 480px; margin: auto;">
 <div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/PrPNP5RVcLg" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>

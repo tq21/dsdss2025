@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Adaptive-TMLE for augmenting RCT with external RWD – DahShu Data Science Symposium 2025</title>
+<title>deepltmle – DahShu Data Science Symposium 2025</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -101,35 +101,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -171,24 +142,7 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#problem-setup" id="toc-problem-setup" class="nav-link" data-scroll-target="#problem-setup">Problem setup</a></li>
-  <li><a href="#candidate-estimands" id="toc-candidate-estimands" class="nav-link" data-scroll-target="#candidate-estimands">Candidate estimands</a>
-  <ul class="collapse">
-  <li><a href="#estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution" id="toc-estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution" class="nav-link" data-scroll-target="#estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution">Estimand 1: treatment effect in the RCT averaged over the pooled covariate distribution</a></li>
-  <li><a href="#estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution" id="toc-estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution" class="nav-link" data-scroll-target="#estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution">Estimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution</a></li>
-  </ul></li>
-  <li><a href="#loading-required-packages" id="toc-loading-required-packages" class="nav-link" data-scroll-target="#loading-required-packages">Loading required packages</a></li>
-  <li><a href="#data-summary" id="toc-data-summary" class="nav-link" data-scroll-target="#data-summary">Data summary</a></li>
-  <li><a href="#candidate-estimators" id="toc-candidate-estimators" class="nav-link" data-scroll-target="#candidate-estimators">Candidate estimators</a>
-  <ul class="collapse">
-  <li><a href="#an-unadjusted-estimator" id="toc-an-unadjusted-estimator" class="nav-link" data-scroll-target="#an-unadjusted-estimator">An unadjusted estimator</a></li>
-  <li><a href="#a-standard-tmle-estimator" id="toc-a-standard-tmle-estimator" class="nav-link" data-scroll-target="#a-standard-tmle-estimator">A standard TMLE estimator</a></li>
-  <li><a href="#adaptive-tmle-estimator" id="toc-adaptive-tmle-estimator" class="nav-link" data-scroll-target="#adaptive-tmle-estimator">Adaptive-TMLE estimator</a></li>
-  </ul></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
-  <li><a href="#interpreting-the-outputs" id="toc-interpreting-the-outputs" class="nav-link" data-scroll-target="#interpreting-the-outputs">Interpreting the outputs</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#load-packages" id="toc-load-packages" class="nav-link active" data-scroll-target="#load-packages">Load packages</a></li>
   </ul>
 </nav>
     </div>
@@ -197,7 +151,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Adaptive-TMLE for augmenting RCT with external RWD</h1>
+<h1 class="title">Introduction</h1>
 </div>
 
 
@@ -214,77 +168,45 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD).</p>
-</section>
-<section id="problem-setup" class="level2">
-<h2 class="anchored" data-anchor-id="problem-setup">Problem setup</h2>
-<p>Suppose we observe <span class="math inline">\(n\)</span> independent and identically distributed observations of the random variable <span class="math inline">\(O=(S,W,A,Y)\sim P_0\in\mathcal{M}\)</span>. Here, <span class="math inline">\(S\in\{0,1\}\)</span> indicates whether the patient belongs to the RCT; <span class="math inline">\(W\in\mathbb{R}^d\)</span> represents a set of baseline covariates; <span class="math inline">\(A\in\{0,1\}\)</span> denotes treatment assignment; and <span class="math inline">\(Y\in\mathbb{R}\)</span> is the clinical outcome of interest. We consider settings where both the RCT and external data include treatment and control arms. Although data fusion can serve many goals, here we focus on improving precision in estimating the treatment effect in the RCT.</p>
-</section>
-<section id="candidate-estimands" class="level2">
-<h2 class="anchored" data-anchor-id="candidate-estimands">Candidate estimands</h2>
-<p>To define the estimands, we ask two questions:</p>
-<ol type="1">
-<li><p>What treatment effect do we want to learn?</p></li>
-<li><p>Over what population distribution should this effect be averaged?</p></li>
-</ol>
-<p>For the first question, since our interest lies in refining improving the precision of the treatment effect in the RCT, we define the effect within the trial (<span class="math inline">\(S=1\)</span>). For the second question, we consider two choices: averaging over the <strong>pooled</strong> covariate distribution from both the RCT and external data, or averaging over the <strong>RCT-only</strong> covariate distribution.</p>
-<section id="estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution" class="level3">
-<h3 class="anchored" data-anchor-id="estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution">Estimand 1: treatment effect in the RCT averaged over the pooled covariate distribution</h3>
-<p>We first focus on the estimand that averages over the pooled covariate distribution. Formally, we define <span class="math display">\[
-\Psi_1(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
-\]</span> which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where <span class="math inline">\(P_W\)</span> is the distribution of <span class="math inline">\(W\)</span> in the pooled population. Identification requires the following assumptions:</p>
-<ul>
-<li><p>A1: <span class="math inline">\((Y_0,Y_1)\perp A\mid S=1,W\)</span> (exchangeability due to randomization in the RCT);</p></li>
-<li><p>A2: <span class="math inline">\(0&lt;P(A=1\mid S=1,W)&lt;1\)</span> (treatment positivity in the RCT);</p></li>
-<li><p>A3: <span class="math inline">\(P(S=1\mid W)&gt;0\)</span> (positivity of trial participation in the pooled population).</p></li>
-</ul>
-<p>Under A1–A3, the estimand is identified as <span class="math display">\[
-\Psi_1(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)],
-\]</span> where the outer expectation is taken over the pooled distribution of <span class="math inline">\(W\)</span>.</p>
-</section>
-<section id="estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution" class="level3">
-<h3 class="anchored" data-anchor-id="estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution">Estimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution</h3>
-<p>Next, we consider the estimand that averages over the RCT-only covariate distribution. Formally, we define <span class="math display">\[
-\Psi_2(P)=E_{P_{W\mid S=1}}[E_P(Y_1-Y_0\mid S=1,W)],
-\]</span> which represents the treatment effect within the trial, averaged over the covariate distribution of the RCT population. Identification requires only A1 and A2. No trial-enrollment positivity assumption on <span class="math inline">\(S\)</span> is needed because both the inner and outer expectations are restricted to the <span class="math inline">\(S=1\)</span> stratum. Under A1 and A2, the estimand is identified as <span class="math display">\[
-\Psi_2(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)\mid S=1],
-\]</span> where the outer expectation is taken over the covariate distribution of the RCT population.</p>
-</section>
-</section>
-<section id="loading-required-packages" class="level2">
-<h2 class="anchored" data-anchor-id="loading-required-packages">Loading required packages</h2>
-<p>We first load the required packages.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(atmle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="load-packages" class="level2">
+<h2 class="anchored" data-anchor-id="load-packages">Load packages</h2>
+<p>First, let’s load the required packages. The python package <code>dltmle</code> implements the DeepLTMLE.</p>
+<div id="7586dfb0" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#import dltmle</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#import numpy as np</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section>
-<section id="data-summary" class="level2">
-<h2 class="anchored" data-anchor-id="data-summary">Data summary</h2>
-</section>
-<section id="candidate-estimators" class="level2">
-<h2 class="anchored" data-anchor-id="candidate-estimators">Candidate estimators</h2>
-<section id="an-unadjusted-estimator" class="level3">
-<h3 class="anchored" data-anchor-id="an-unadjusted-estimator">An unadjusted estimator</h3>
-</section>
-<section id="a-standard-tmle-estimator" class="level3">
-<h3 class="anchored" data-anchor-id="a-standard-tmle-estimator">A standard TMLE estimator</h3>
-</section>
-<section id="adaptive-tmle-estimator" class="level3">
-<h3 class="anchored" data-anchor-id="adaptive-tmle-estimator">Adaptive-TMLE estimator</h3>
-</section>
-</section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-</section>
-<section id="interpreting-the-outputs" class="level2">
-<h2 class="anchored" data-anchor-id="interpreting-the-outputs">Interpreting the outputs</h2>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p>Mark van der Laan, Sky Qiu &amp; Lars van der Laan (2024). Adaptive-TMLE for the Average Treatment Effect based on Randomized Controlled Trial Augmented with Real-World Data. In press at Journal of Causal inference. <a href="https://arxiv.org/abs/2405.07186">[Paper]</a></p>
-<p>Sky Qiu, Jens Tarp, Andrew Mertens &amp; Mark van der Laan (2025). An Estimator-Robust Design for Augmenting Randomized Controlled Trial with External Real-World Data. arXiv preprint. <a href="https://arxiv.org/abs/2501.17835">[Paper]</a></p>
+<div id="45bd29b8" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#W, L, A, C, Y = dltmle.example_dgp(np.random.default_rng(0), 1000, 10)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="aa780a07" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># hparams_candidates = {</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#     'dim_emb': [8, 16],</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#     'dim_emb_time': [4],</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#     'dim_emb_type': [4],</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#     'hidden_size': [8],</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     'num_layers': [1],</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     'nhead': [2],</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#     'dropout': [0.1],</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">#     'learning_rate': [1e-3],</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#     'alpha': [0.05],</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     'beta': [0.05],</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     'max_epochs': [100],</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#     'batch_size': [64],</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="99b7ba31" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># hparams = dltmle.tune(0, hparams_candidates, W, L, A, C, Y, n_trials=5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="0476ac5c" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># psi_0 = dltmle.fit(0, hparams, W, L, A, C, Y, np.zeros_like(A))</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># psi_1 = dltmle.fit(0, hparams, W, L, A, C, Y, np.ones_like(A))</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># print('mean counterfactual outcome under a = 0', psi_0)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># print('mean counterfactual outcome under a = 1', psi_1)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># print('ATE (risk difference)', psi_1 - psi_0)</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># print('risk ratio', psi_1 / psi_0)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># print('odds ratio', (psi_1 / (1 - psi_1)) / (psi_0 / (1 - psi_0)))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 
 
 </section>

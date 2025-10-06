@@ -1,0 +1,56 @@
+---
+title: "An example of the k-th order spline representation: k=1, d=3"
+format: html
+---
+
+In this section, we illustrate the components of a $k$-th order spline representation with $k=1$ and $d=3$. Given $Q\in D^{(1)}([0,1]^3)$, we have the following representation:
+$$
+\begin{eqnarray*}
+Q(x)&=&\sum_{s_1\subset\{1,2,3\},
+\mid s_1\mid>0} \phi^1_0(x(s_1)) Q^{(1)}_{s_1}(0(s_1))\\
+&&+\sum_{\bar{s}(2), \mid s_2\mid>0}\bar{\phi}_{\bar{s}(2)}(x)\int \phi^1_{u(s_2)}(x(s_2))Q^{(1)}_{\bar{s}(2)}(du(s_2)),
+\end{eqnarray*}
+$$
+where $\bar{\phi}_{\bar{s}(2)}(x)=\phi_0^1(x(s_1/s_2))=\prod_{l\in s_1/s_2}x(l)$.
+
+Since there are 7 non-empty subsets of $\{1,2,3\}$, we have that first part in the above representation of $Q(x)$ is a finite linear combination of $x_1$, $x_2$, $x_3$, $x_1x_2$, $x_1x_3$, $x_2x_3$, and $x_1x_2x_3$. For a general $d$, the parametric component for $k=1$ is given by this saturated model in main terms and all their interactions. For our proposed HAL-MLE, it might make sense to give priority to this parametric component, which represents a typical traditional regression model. This could be achieved by downweighting the coefficients in front of these terms in the definition of the $L_1$-norm. Practically, one may use the \texttt{penalty.factor} argument in the \texttt{glmnet} R package to achieve this by allowing differential shrinkage for each coefficient. 
+
+The second part in the above representation is an infinite linear combination of first-order splines multiplied by some boundary polynomial factors. Specifically, recall from Definition \ref{ch2_def:barsk} that we have $\bar{s}(2)=(s_1,s_2)$ with $s_2\subset s_1\subset\{1,2,3\}$. Now, we enumerate all cases of $s_1$ and $s_2$. Let $(x-u)_+=I(x\geq u)(x-u)$ for knot point $u$. First, when $s_1=\{1\},\{2\},$ or $\{3\}$, i.e., a single-coordinate subset, we have basis functions
+$$
+(x_1-u_1)_+,(x_2-u_2)_+,(x_3-u_3)_+;
+$$
+When $s_1$ is a two-coordinate subset, then $s_2$ is a single- or two-coordinate subset,
+
+- if $s_1=\{1,2\}$, we have basis functions
+$$
+x_2(x_1-u_1)_+,x_1(x_2-u_2)_+,(x_1-u_1)_+(x_2-u_2)_+;
+$$
+
+- if $s_1=\{1,3\}$, we have basis functions
+$$
+x_3(x_1-u_1)_+,x_1(x_3-u_3)_+,(x_1-u_1)_+(x_3-u_3)_+;
+$$
+
+- if $s_1=\{2,3\}$, we have basis functions
+$$
+x_3(x_2-u_2)_+,x_2(x_3-u_3)_+,(x_2-u_2)_+(x_3-u_3)_+;
+$$
+
+Finally, when $s_1=\{1,2,3\}$, i.e., the full-coordinate subset,
+
+- if $s_2$ is a single-coordinate subset, we have basis functions
+$$
+x_2x_3(x_1-u_1)_+,x_1x_3(x_2-u_2)_+,x_1x_2(x_3-u_3)_+;
+$$
+
+- if $s_2$ is a two-coordinate subset, we have basis functions
+$$
+x_3(x_1-u_1)_+(x_2-u_2)_+,x_2(x_1-u_1)_+(x_3-u_3)_+,x_1(x_2-u_2)_+(x_3-u_3)_+;
+$$
+
+- if $s_2=s_1$ is also the full-coordinate subset, we have the basis function
+$$
+(x_1-u_1)_+(x_2-u_2)_+(x_3-u_3)_+.
+$$
+
+Note that the basis functions from the first part of the representation—the parametric component—as well as the boundary polynomial factors, can also be interpreted as first-order splines with knot points at zero. Therefore, an alternative way to view this first-order HAL representation is as follows: take all the zero-order spline basis functions introduced in Chapter and replace them with first-order spline basis functions, while also including knot points at zero.

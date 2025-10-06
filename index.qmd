@@ -12,13 +12,32 @@ This page contains slides and code examples for the short course on Highly Adapt
 
 ## Schedule
 
-| Time | Topic | Links to materials |
-|------|-------|--------------------|
-|      |       |                    |
-|      |       |                    |
-|      |       |                    |
-|      |       |                    |
-|      |       |                    |
+Here is the schedule for the day (9am-5pm, October 18th, 2025):
+
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Time**        | **Topic**                                                                                                               | **Links to materials**                                                                                                                                                     |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 9am-10.20am     | Introduction to Targeted Learning; The Roadmap; Super Learning; TMLE                                                    |                                                                                                                                                                            |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 10.20am-10.40am | Coffee/Tea break, Q&A                                                                                                   |                                                                                                                                                                            |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 10.40am-12pm    | Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, `hal9001` software | -   `hal9001` [\[vignette\]](https://tlverse.org/hal9001/articles/intro_hal9001.html)                                                                                      |
+|                 |                                                                                                                         | -   Estimating conditional average treatment effects [\[code example\]](cate.qmd)                                                                                          |
+|                 |                                                                                                                         | -   Estimating conditional densities [\[code example\]](cde.qmd)                                                                                                           |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 12pm-1pm        | Lunch break                                                                                                             |                                                                                                                                                                            |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 1pm-2.20pm      | Higher order splines, examples of 1st and 2nd order HAL, rate of convergence, HAL-TMLE                                  | -   Examples of the k-th order spline representation: [\[k=1, d=3\]](k1d3.qmd), [\[k=2, d=3\]](k2d3.qmd)                                                                   |
+|                 |                                                                                                                         | -   Specifying a diverse super learner library including different specifications (smoothness orders, subspaces) of candidate HAL learners [\[code example\]](hal_dsl.qmd) |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 2.20pm-2.40pm   | Coffee/Tea break, Q&A                                                                                                   |                                                                                                                                                                            |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 2.40pm-3.40pm   | HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs                                                         | -   Adaptive-TMLE for augmenting an RCT with external RWD [\[code example\]](atmle.qmd)                                                                                    |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 3.40pm-4.40pm   | L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE                                                             | -   DeepLTMLE example                                                                                                                                                      |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 4.40pm-5pm      | Closing remarks, Q&A                                                                                                    |                                                                                                                                                                            |
++-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 ## Environment setup
 
@@ -55,37 +74,39 @@ remotes::install_github("tq21/atmle")
 
 ## Additional resources
 
-- Center for Targeted Machine Learning and Causal Inference at Berkeley: [https://ctml.berkeley.edu/](https://ctml.berkeley.edu/)
+-   Center for Targeted Machine Learning and Causal Inference at Berkeley: <https://ctml.berkeley.edu/>
 
-- Introduction to causal inference by Maya Petersen and Laura Balzer: [https://ctml.berkeley.edu/introduction-causal-inference](https://ctml.berkeley.edu/introduction-causal-inference)
+-   Introduction to causal inference by Maya Petersen and Laura Balzer: <https://ctml.berkeley.edu/introduction-causal-inference>
 
-- Targeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): [https://tlverse.org/tlverse-handbook/](https://tlverse.org/tlverse-handbook/)
+-   Targeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): <https://tlverse.org/tlverse-handbook/>
 
-- Check out [TL Revolution YouTube channel](https://www.youtube.com/@putnamdatasciences1309/videos) for FDA funded webinar series on Targeted Learning:
+-   Kat Hoffman's blog and tutorial on Targeted Learning: <https://www.khstats.com/blog/tmle/tutorial>
 
-<div style="max-width: 480px; margin: auto;">
-  {{< video https://www.youtube.com/watch?v=PrPNP5RVcLg >}}
-</div>
+-   Check out [TL Revolution's YouTube channel](https://www.youtube.com/@putnamdatasciences1309/videos) for FDA funded webinar series on Targeted Learning:
 
-<div style="max-width: 480px; margin: auto;">
-  {{< video https://www.youtube.com/watch?v=8Q9dfW3oOi4 >}}
-</div>
+::: {style="max-width: 480px; margin: auto;"}
+{{< video https://www.youtube.com/watch?v=PrPNP5RVcLg >}}
+:::
 
-<div style="max-width: 480px; margin: auto;">
-  {{< video https://www.youtube.com/watch?v=ANuvSrkJ3Ag >}}
-</div>
+::: {style="max-width: 480px; margin: auto;"}
+{{< video https://www.youtube.com/watch?v=8Q9dfW3oOi4 >}}
+:::
 
-<div style="max-width: 480px; margin: auto;">
-  {{< video https://www.youtube.com/watch?v=eSytQfqZsv8 >}}
-</div>
+::: {style="max-width: 480px; margin: auto;"}
+{{< video https://www.youtube.com/watch?v=ANuvSrkJ3Ag >}}
+:::
 
-<div style="max-width: 480px; margin: auto;">
-  {{< video https://www.youtube.com/watch?v=YnXVAtzF4ss >}}
-</div>
+::: {style="max-width: 480px; margin: auto;"}
+{{< video https://www.youtube.com/watch?v=eSytQfqZsv8 >}}
+:::
 
-<div style="max-width: 480px; margin: auto;">
-  {{< video https://www.youtube.com/watch?v=qr5JolEAuJU >}}
-</div>
+::: {style="max-width: 480px; margin: auto;"}
+{{< video https://www.youtube.com/watch?v=YnXVAtzF4ss >}}
+:::
+
+::: {style="max-width: 480px; margin: auto;"}
+{{< video https://www.youtube.com/watch?v=qr5JolEAuJU >}}
+:::
 
 ## License
 

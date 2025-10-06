@@ -1,0 +1,129 @@
+---
+title: "Bulding a diverse super learner library with candidate HAL learners"
+format: html
+---
+
+### Introduction
+
+
+### Load required packages
+
+```{r, message=FALSE}
+library(hal9001)
+library(sl3) # super learner
+library(origami) # for V-fold cross-validation
+library(tmle)
+options(sl3.verbose = TRUE)
+```
+
+### Data
+
+```{r}
+source("dgps/sim_data_dsl.R")
+set.seed(123)
+data <- sim_data(500)
+W1 <- data$W1
+W2 <- data$W2
+W3 <- data$W3
+A <- data$A
+Y <- data$Y
+folds <- make_folds(n = nrow(data), V = 5)
+```
+
+First, let's build a super learner library for the treatment mechanism. We can use the formula interface in `hal9001` to give HAL specifications.
+```{r}
+# specify formulas
+formula_1 <- ~ h(W1,s=0,k=20) + h(W2,s=0)
+formula_2 <- ~ h(W1,s=0,k=20) + h(W2,s=0) + h(W1,W2,s=0,k=10)
+formula_3 <- ~ h(W1,s=1,k=20) + h(W2,s=1) + h(W1,W2,s=1,k=10)
+
+# define candidate HAL learners
+g_hal_1 <- Lrnr_hal9001$new(formula = formula_1)
+g_hal_2 <- Lrnr_hal9001$new(formula = formula_2)
+g_hal_3 <- Lrnr_hal9001$new(formula = formula_3)
+
+# define discrete SL library
+g_lib <- Stack$new(g_hal_1, g_hal_2, g_hal_3)
+g_sl <- Lrnr_sl$new(learners = g_lib, 
+                    metalearner = Lrnr_cv_selector$new(loss_loglik_binomial))
+```
+
+Next, we define a task for fitting the treatment mechanism.
+```{r}
+# define task for fitting the treatment mechanism
+task_g <- sl3_Task$new(data = data, 
+                       covariates = c("W1", "W2", "W3"),
+                       outcome = "A",
+                       outcome_type = "binomial",
+                       folds = folds)
+
+# fit the treatment mechanism and obtain predictions
+fit_g <- g_sl$train(task_g)
+g1W <- fit_g$predict(task_g)
+```
+
+Now, let's build a super learner library for the outcome regression.
+```{r}
+# specify formulas
+formula_Q_1 <- ~ h(., s=0,k=20) + h(.,., s=0,k=20)
+formula_Q_2 <- ~ h(W1,s=0,k=20) + h(W2,s=0) + h(W3,s=0,k=20) + 
+  h(A,W1,s=0,k=10) + h(A,W3,s=0,k=10)
+formula_Q_3 <- ~ h(W1,s=1,k=20) + h(W2,s=1) + h(W3,s=1,k=20) + 
+  h(A,W1,s=1,k=10) + h(A,W3,s=1,k=10)
+
+# define candidate HAL learners
+Q_hal_1 <- Lrnr_hal9001$new(formula = formula_Q_1)
+Q_hal_2 <- Lrnr_hal9001$new(formula = formula_Q_2)
+Q_hal_3 <- Lrnr_hal9001$new(formula = formula_Q_3)
+
+# define discrete SL library
+Q_lib <- Stack$new(Q_hal_1, Q_hal_2, Q_hal_3)
+Q_sl <- Lrnr_sl$new(learners = Q_lib, 
+                    metalearner = Lrnr_cv_selector$new(loss_squared_error))
+```
+
+Similarly, we define tasks for fitting the outcome regression. Note that for the outcome regression, we need to create three tasks: one for fitting the observed outcome regression $E(Y\mid A,W)$, and two counterfactual tasks for $A=1$ and $A=0$ to obtain predictions under each treatment level.
+```{r}
+# define task for fitting the outcome regression (and counterfactual tasks)
+task_Q <- sl3_Task$new(data = data,
+                       covariates = c("A", "W1", "W2", "W3"),
+                       outcome = "Y",
+                       outcome_type = "continuous",
+                       folds = folds)
+data_A1 <- data; data_A1$A <- 1; data_A0 <- data; data_A0$A <- 0
+task_Q1 <- sl3_Task$new(data = data_A1,
+                        covariates = c("A", "W1", "W2", "W3"),
+                        outcome = "Y",
+                        outcome_type = "continuous",
+                        folds = folds)
+task_Q0 <- sl3_Task$new(data = data_A0,
+                        covariates = c("A", "W1", "W2", "W3"),
+                        outcome = "Y",
+                        outcome_type = "continuous",
+                        folds = folds)
+
+# fit the outcome regression and obtain predictions
+fit_Q <- Q_sl$train(task_Q)
+QAW <- fit_Q$predict(task_Q)
+Q1W <- fit_Q$predict(task_Q1)
+Q0W <- fit_Q$predict(task_Q0)
+```
+
+Finally, let's supply the nuisance parameter estimate `g1W` and initial estimates `Q1W` and `Q0W` to the `tmle` function to compute the targeted estimates.
+```{r}
+tmle_obj <- tmle(W = data[, c("W1", "W2", "W3")],
+                 Y = data$Y,
+                 A = data$A,
+                 Q = as.matrix(data.frame(Q0W=Q0W, Q1W=Q1W)),
+                 g1W = g1W,
+                 family = "gaussian",
+                 prescreenW.g	= FALSE,
+                 evalATT = FALSE)
+summary(tmle_obj)
+```
+
+Let's compare the results to the truth:
+```{r, cache=TRUE}
+truth <- get_truth()
+truth
+```
