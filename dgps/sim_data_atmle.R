@@ -34,9 +34,9 @@ sim_data <- function(n,
   }
 
   # outcome
-  mu_base <- -0.2 + 0.9*W1 - 0.6*W2 + 0.3*W3 + 0.2*W4 + 0.2*W1*W4
-  site_shift <- (S == 0)*(1.5*W1+0.2*W2)*A
-  tau <- 1.0 + 0.6*W1 - 0.4*W2 + 0.3*W3 - 0.2*W4 + 0.3*sin(W1)
+  mu_base <- -0.3 + 0.9*W1 - 0.6*W2 + 0.3*W3 + 0.2*W4 + 0.2*W1*W4
+  site_shift <- (S == 0)*(0.9+0.2*W1)*A
+  tau <- 0.15 + 0.6*W1 - 0.4*W2 + 0.3*W3 - 0.2*W4 + 0.3*sin(W1)
   eps <- rnorm(n, 0, 1)
   Y <- mu_base + site_shift + A * tau + eps
 
@@ -47,7 +47,7 @@ sim_data <- function(n,
   }
 }
 
-get_truth <- function(n_large=1e7) {
+get_truth <- function(n_large=1e8) {
   data_large <- sim_data(n_large, A_counter=1)
   return(mean(data_large$tau))
 }

@@ -68,8 +68,7 @@ options(sl3.verbose = FALSE)
 ## Data summary
 ```{r}
 source("dgps/sim_data_atmle.R")
-set.seed(123)
-data <- sim_data(n=500)
+
 ```
 
 ## Candidate estimators
@@ -77,27 +76,26 @@ data <- sim_data(n=500)
 ### A standard TMLE estimator
 
 ```{r}
+seed <- 113
+set.seed(seed)
+data <- read.csv("dgps/data_atmle.csv")
+sl_lib <- list(Lrnr_glm$new(),
+               Lrnr_dbarts$new(),
+               Lrnr_xgboost$new())
+set.seed(seed)
 tmle_res <- nonparametric(data = data,
                           S = "S",
                           W = c("W1", "W2", "W3", "W4"),
                           A = "A",
                           Y = "Y",
                           family = "gaussian",
-                          Pi_method = "glm",
+                          Pi_method = sl_lib,
                           g_method = "glm",
-                          Q_method = "glm",
-                          Q_pooling = FALSE,
+                          Q_method = sl_lib,
+                          Q_pooling = TRUE,
                           v_folds = 5)
-```
 
-
-### Adaptive-TMLE estimator
-
-```{r, cache=TRUE}
-sl_lib <- list(Lrnr_glm$new(),
-               Lrnr_dbarts$new(),
-               Lrnr_xgboost$new())
-
+set.seed(seed)
 atmle_res <- atmle(data = data, 
                    S = "S", 
                    W = c("W1", "W2", "W3", "W4"), 
@@ -111,15 +109,11 @@ atmle_res <- atmle(data = data,
                    theta_tilde_method = sl_lib, 
                    bias_working_model = "HAL",
                    pooled_working_model = "HAL",
+                   target_method = "oneshot",
                    enumerate_basis_args = list(max_degree = 3,
-                                               smoothness_orders = 1))
-```
+                                               smoothness_orders = 1),
+                   v_folds = 5)
 
-Let's study the output of it a bit more closely.
-
-First, let's examine the point estimates. The pooled ATE estimate is 1.37, while the bias-correct ATE estimate is 1.14. We also see that the estimate of the bias is 0.23. Indeed, the bias correction is pushing us closer to the truth, which is 1.15.
-
-```{r}
 df_plot <- data.frame(Estimator = c("Standard TMLE",
                                     "Pooled-ATE", 
                                     "Bias-corrected ATE (A-TMLE)"),
@@ -139,7 +133,8 @@ df_plot$Estimator <- factor(df_plot$Estimator,
 ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   geom_point() +
   geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, size = 0.8) +
-  geom_hline(yintercept = 1.15, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = 0.2998021, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = 0, linetype = "dotted", color = "blue") +
   theme_minimal(base_size = 13) +
   labs(title = "Point Estimates with 95% Confidence Intervals",
        y = "Estimate",
@@ -147,6 +142,20 @@ ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5)) +
     coord_flip()
+```
+
+### Adaptive-TMLE estimator
+
+```{r, cache=TRUE}
+
+```
+
+Let's study the output of it a bit more closely.
+
+First, let's examine the point estimates. The pooled ATE estimate is 1.37, while the bias-correct ATE estimate is 1.14. We also see that the estimate of the bias is 0.23. Indeed, the bias correction is pushing us closer to the truth, which is 1.15.
+
+```{r}
+
 ```
 
 ## Results
