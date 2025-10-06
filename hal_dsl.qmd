@@ -5,7 +5,6 @@ format: html
 
 ### Introduction
 
-
 ### Load required packages
 
 ```{r, message=FALSE}
@@ -31,6 +30,7 @@ folds <- make_folds(n = nrow(data), V = 5)
 ```
 
 First, let's build a super learner library for the treatment mechanism. We can use the formula interface in `hal9001` to give HAL specifications.
+
 ```{r}
 # specify formulas
 formula_1 <- ~ h(W1,s=0,k=20) + h(W2,s=0)
@@ -49,6 +49,7 @@ g_sl <- Lrnr_sl$new(learners = g_lib,
 ```
 
 Next, we define a task for fitting the treatment mechanism.
+
 ```{r}
 # define task for fitting the treatment mechanism
 task_g <- sl3_Task$new(data = data, 
@@ -63,6 +64,7 @@ g1W <- fit_g$predict(task_g)
 ```
 
 Now, let's build a super learner library for the outcome regression.
+
 ```{r}
 # specify formulas
 formula_Q_1 <- ~ h(., s=0,k=20) + h(.,., s=0,k=20)
@@ -83,6 +85,7 @@ Q_sl <- Lrnr_sl$new(learners = Q_lib,
 ```
 
 Similarly, we define tasks for fitting the outcome regression. Note that for the outcome regression, we need to create three tasks: one for fitting the observed outcome regression $E(Y\mid A,W)$, and two counterfactual tasks for $A=1$ and $A=0$ to obtain predictions under each treatment level.
+
 ```{r}
 # define task for fitting the outcome regression (and counterfactual tasks)
 task_Q <- sl3_Task$new(data = data,
@@ -110,6 +113,7 @@ Q0W <- fit_Q$predict(task_Q0)
 ```
 
 Finally, let's supply the nuisance parameter estimate `g1W` and initial estimates `Q1W` and `Q0W` to the `tmle` function to compute the targeted estimates.
+
 ```{r}
 tmle_obj <- tmle(W = data[, c("W1", "W2", "W3")],
                  Y = data$Y,
@@ -123,6 +127,7 @@ summary(tmle_obj)
 ```
 
 Let's compare the results to the truth:
+
 ```{r, cache=TRUE}
 truth <- get_truth()
 truth

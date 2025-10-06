@@ -48,6 +48,7 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 ```{r, eval=FALSE}
 install.packages("hal9001")
 install.packages("haldensify")
+install.packages("MASS")
 remotes::install_github("tlverse/sl3")
 remotes::install_github("tq21/atmle")
 ```

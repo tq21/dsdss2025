@@ -1,5 +1,5 @@
 ---
-title: "Adaptive-TMLE for augmenting RCT with external RWD"
+title: "Analyzing Hybrid RCTs with Adaptive-TMLE"
 format: html
 ---
 
@@ -58,9 +58,19 @@ where the outer expectation is taken over the covariate distribution of the RCT 
 We first load the required packages.
 ```{r, message=FALSE}
 library(atmle)
+library(sl3)
+library(origami)
+library(purrr)
+library(ggplot2)
+options(sl3.verbose = FALSE)
 ```
 
 ## Data summary
+```{r}
+source("dgps/sim_data_atmle.R")
+set.seed(123)
+data <- sim_data(n=500)
+```
 
 ## Candidate estimators
 
@@ -69,6 +79,54 @@ library(atmle)
 ### A standard TMLE estimator
 
 ### Adaptive-TMLE estimator
+
+```{r}
+sl_lib <- list(Lrnr_glm$new(),
+               Lrnr_dbarts$new(),
+               Lrnr_xgboost$new())
+
+atmle_res <- atmle(data = data, 
+                   S = "S", 
+                   W = c("W1", "W2", "W3", "W4"), 
+                   A = "A",
+                   Y = "Y",
+                   controls_only = FALSE,
+                   family = "gaussian",
+                   theta_method = sl_lib, 
+                   Pi_method = sl_lib, 
+                   g_method = sl_lib, 
+                   theta_tilde_method = sl_lib, 
+                   bias_working_model = "HAL",
+                   pooled_working_model = "HAL",
+                   enumerate_basis_args = list(max_degree = 3,
+                                               smoothness_orders = 1))
+```
+
+Let's study the output of it a bit more closely.
+
+First, let's examine the point estimates. The pooled ATE estimate is 1.37, while the bias-correct ATE estimate is 1.14. We also see that the estimate of the bias is 0.23. Indeed, the bias correction is pushing us closer to the truth, which is 1.15.
+
+```{r}
+df_plot <- data.frame(Estimator = c("Pooled-ATE", "Bias-corrected ATE"),
+                      Estimate = c(atmle_res$psi_tilde_est, atmle_res$est),
+                      Lower = c(atmle_res$psi_tilde_lower, atmle_res$lower),
+                      Upper = c(atmle_res$psi_tilde_upper, atmle_res$upper))
+df_plot$Estimator <- factor(df_plot$Estimator, 
+                            levels = c("Bias-corrected ATE", "Pooled-ATE"))
+ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, size = 0.8) +
+  geom_hline(yintercept = 1.15, linetype = "dashed", color = "red") +
+  theme_minimal(base_size = 13) +
+  labs(title = "Point Estimates with 95% Confidence Intervals",
+       y = "Estimate",
+       x = "") +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5)) +
+    coord_flip()
+```
+
+
 
 ## Results
 
