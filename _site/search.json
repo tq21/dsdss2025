@@ -44,23 +44,23 @@
   {
     "objectID": "atmle.html",
     "href": "atmle.html",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "",
-    "text": "In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD)."
+    "text": "In this coding example, we demonstrate through a synthetic example of how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a non-inferiority randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD) to establish treatment effect superiority."
   },
   {
     "objectID": "atmle.html#introduction",
     "href": "atmle.html#introduction",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "",
-    "text": "In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD)."
+    "text": "In this coding example, we demonstrate through a synthetic example of how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a non-inferiority randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD) to establish treatment effect superiority."
   },
   {
     "objectID": "atmle.html#problem-setup",
     "href": "atmle.html#problem-setup",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "Problem setup",
-    "text": "Problem setup\nSuppose we observe \\(n\\) independent and identically distributed observations of the random variable \\(O=(S,W,A,Y)\\sim P_0\\in\\mathcal{M}\\). Here, \\(S\\in\\{0,1\\}\\) indicates whether the patient belongs to the RCT; \\(W\\in\\mathbb{R}^d\\) represents a set of baseline covariates; \\(A\\in\\{0,1\\}\\) denotes treatment assignment; and \\(Y\\in\\mathbb{R}\\) is the clinical outcome of interest. We consider settings where both the RCT and external data include treatment and control arms. Although data fusion can serve many goals, here we focus on improving precision in estimating the treatment effect in the RCT."
+    "text": "Problem setup\nSuppose we observe \\(n\\) copies of the random variable \\(O=(S,W,A,Y)\\) sampled i.i.d from a probability distribution \\(P_0\\) from a statistical model \\(\\mathcal{M}\\). Here, \\(S\\in\\{0,1\\}\\) indicates whether the patient belongs to the RCT; \\(W\\in\\mathbb{R}^d\\) represents a set of baseline covariates; \\(A\\in\\{0,1\\}\\) denotes treatment assignment; and \\(Y\\in\\mathbb{R}\\) is the clinical outcome of interest. We consider a setting where both the RCT and external data include treatment and control arms."
   },
   {
     "objectID": "atmle.html#candidate-estimands",
@@ -72,23 +72,23 @@
   {
     "objectID": "atmle.html#loading-required-packages",
     "href": "atmle.html#loading-required-packages",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "Loading required packages",
-    "text": "Loading required packages\nWe first load the required packages.\n\nlibrary(atmle)"
+    "text": "Loading required packages\nWe first load the required packages:\n\nlibrary(atmle) # not on CRAN yet; install from GitHub\nlibrary(sl3)\nlibrary(origami)\nlibrary(purrr)\nlibrary(ggplot2)\noptions(sl3.verbose = FALSE)"
   },
   {
     "objectID": "atmle.html#data-summary",
     "href": "atmle.html#data-summary",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "Data summary",
-    "text": "Data summary"
+    "text": "Data summary\n\nseed &lt;- 113\ndata &lt;- read.csv(\"dgps/data_atmle.csv\")"
   },
   {
     "objectID": "atmle.html#candidate-estimators",
     "href": "atmle.html#candidate-estimators",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "Candidate estimators",
-    "text": "Candidate estimators\n\nAn unadjusted estimator\n\n\nA standard TMLE estimator\n\n\nAdaptive-TMLE estimator"
+    "text": "Candidate estimators\nWe will compare the standard TMLE estimator with the A-TMLE estimator side-by-side.\n\nA standard TMLE estimator\nThe canonical gradient of \\(\\Psi\\) at \\(P\\) in a nonparametric model is given by \\[\n\\begin{align*}\nD_{\\Psi,P}&=Q_P(1,W,1)-Q_P(1,W,0)-\\Psi(P)\\\\\n&+\\frac{S}{P(S=1\\mid W)}\\cdot\\frac{2A-1}{g_P(A\\mid 1,W)}(Y-Q_P(S,W,A)),\n\\end{align*}\n\\] where \\(Q_P(S,W,A)\\equiv E_P(Y\\mid S,W,A)\\) and \\(g_P(A\\mid S,W)\\equiv P(A\\mid S,W)\\). Therefore, one could construct a standard TMLE estimator with clever covariate \\[\n\\frac{S}{P(S=1\\mid W)}\\cdot\\frac{2A-1}{g_P(A\\mid 1,W)}.\n\\] This TMLE is implemented in the nonparametric() function in the atmle R package:\n\nsl_lib &lt;- list(Lrnr_glm$new(),\n               Lrnr_dbarts$new(),\n               Lrnr_xgboost$new())\nset.seed(seed)\ntmle_res &lt;- nonparametric(data = data,\n                          S = \"S\",\n                          W = c(\"W1\", \"W2\", \"W3\", \"W4\"),\n                          A = \"A\",\n                          Y = \"Y\",\n                          family = \"gaussian\",\n                          Pi_method = sl_lib,\n                          g_method = \"glm\",\n                          Q_method = sl_lib,\n                          Q_pooling = TRUE,\n                          v_folds = 5)\n\n\n\nAdaptive-TMLE estimator\n\nset.seed(seed)\natmle_res &lt;- atmle(data = data, \n                   S = \"S\", \n                   W = c(\"W1\", \"W2\", \"W3\", \"W4\"), \n                   A = \"A\",\n                   Y = \"Y\",\n                   controls_only = FALSE,\n                   family = \"gaussian\",\n                   theta_method = sl_lib, \n                   Pi_method = sl_lib, \n                   g_method = sl_lib, \n                   theta_tilde_method = sl_lib, \n                   bias_working_model = \"HAL\",\n                   pooled_working_model = \"HAL\",\n                   target_method = \"oneshot\",\n                   enumerate_basis_args = list(max_degree = 3,\n                                               smoothness_orders = 1),\n                   v_folds = 5)\n\nlearning θ(W,A)=E(Y|W,A)...Done!\nlearning g(1|W)=P(A=1|W)...Done!\nlearning Π(S=1|W,A)=P(S=1|W,A)...Done!\nlearning τ(W,A)=E(Y|S=1,W,A)-E(Y|S=0,W,A)...Done!\n[1] -0.002126372\nlearning θ̃(W)=E(Y|W)...Done!\nlearning Τ(W)=E(Y|W,A=1)-E(Y|W,A=0)...Done!\n\ntargeting beta_A...Done!\n\nPooled ATE: 0.75524 (0.53173, 0.97874)\nBias: 0.46795 (0.27789, 0.658)\nBias-corrected ATE: 0.28729 (0.01486, 0.55972)\n\n\nLet’s study the output of it a bit more closely.\nFirst, let’s examine the point estimates. The pooled ATE estimate is 0.76, while the bias-correct ATE estimate is 0.29 We also see that the estimate of the bias is 0.47 Indeed, the bias correction is pushing us closer to the truth, which is 0.30.\n\ndf_plot &lt;- data.frame(Estimator = c(\"Standard TMLE\",\n                                    \"Pooled-ATE\", \n                                    \"Bias-corrected ATE (A-TMLE)\"),\n                      Estimate = c(tmle_res$psi_pooled_W, \n                                   atmle_res$psi_tilde_est, \n                                   atmle_res$est),\n                      Lower = c(tmle_res$lower_pooled_W, \n                                atmle_res$psi_tilde_lower, \n                                atmle_res$lower),\n                      Upper = c(tmle_res$upper_pooled_W, \n                                atmle_res$psi_tilde_upper, \n                                atmle_res$upper))\ndf_plot$Estimator &lt;- factor(df_plot$Estimator, \n                            levels = c(\"Standard TMLE\",\n                                       \"Bias-corrected ATE (A-TMLE)\", \n                                       \"Pooled-ATE\"))\nggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +\n  geom_point() +\n  geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, size = 0.8) +\n  geom_hline(yintercept = 0.2998021, linetype = \"dashed\", color = \"red\") +\n  geom_hline(yintercept = 0, linetype = \"dashed\", color = \"gray\") +\n  theme_minimal(base_size = 13) +\n  labs(title = \"Point Estimates with 95% Confidence Intervals\",\n       y = \"Estimate\",\n       x = \"\") +\n  theme(legend.position = \"none\",\n        plot.title = element_text(hjust = 0.5)) +\n  coord_flip()\n\nWarning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.\nℹ Please use `linewidth` instead.\n\n\n\n\n\n\n\n\n\nLet’s also compare the widths of the 95% confidence intervals:\n\nci_width_tmle &lt;- tmle_res$upper_pooled_W-tmle_res$lower_pooled_W\nci_width_atmle &lt;- atmle_res$upper-atmle_res$lower\nround(ci_width_atmle/ci_width_tmle, 3)\n\n[1] 0.904\n\n\nThe width of the 95% confidence interval of the A-TMLE estimator is about 90% of that of the standard TMLE estimator."
   },
   {
     "objectID": "atmle.html#results",
@@ -107,7 +107,7 @@
   {
     "objectID": "atmle.html#references",
     "href": "atmle.html#references",
-    "title": "Adaptive-TMLE for augmenting RCT with external RWD",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
     "section": "References",
     "text": "References\nMark van der Laan, Sky Qiu & Lars van der Laan (2024). Adaptive-TMLE for the Average Treatment Effect based on Randomized Controlled Trial Augmented with Real-World Data. In press at Journal of Causal inference. [Paper]\nSky Qiu, Jens Tarp, Andrew Mertens & Mark van der Laan (2025). An Estimator-Robust Design for Augmenting Randomized Controlled Trial with External Real-World Data. arXiv preprint. [Paper]"
   },
@@ -123,7 +123,7 @@
     "href": "index.html#environment-setup",
     "title": "Highly Adaptive Lasso and Targeted Learning 📿🎯",
     "section": "Environment setup",
-    "text": "Environment setup\n\nR (≥ 4.3) installed.\nRecommended IDE: RStudio.\nR packages required:\n\n\ninstall.packages(\"hal9001\")\ninstall.packages(\"haldensify\")\nremotes::install_github(\"tlverse/sl3\")\nremotes::install_github(\"tq21/atmle\")"
+    "text": "Environment setup\n\nR (≥ 4.3) installed.\nRecommended IDE: RStudio.\nR packages required:\n\n\ninstall.packages(\"hal9001\")\ninstall.packages(\"haldensify\")\ninstall.packages(\"MASS\")\nremotes::install_github(\"tlverse/sl3\")\nremotes::install_github(\"tq21/atmle\")"
   },
   {
     "objectID": "index.html#faq",
@@ -201,5 +201,19 @@
     "title": "Bulding a diverse super learner library with candidate HAL learners",
     "section": "",
     "text": "Introduction\n\n\nLoad required packages\n\nlibrary(hal9001)\nlibrary(sl3) # super learner\nlibrary(origami) # for V-fold cross-validation\nlibrary(tmle)\noptions(sl3.verbose = TRUE)\n\n\n\nData\n\nsource(\"dgps/sim_data_dsl.R\")\nset.seed(123)\ndata &lt;- sim_data(500)\nW1 &lt;- data$W1\nW2 &lt;- data$W2\nW3 &lt;- data$W3\nA &lt;- data$A\nY &lt;- data$Y\nfolds &lt;- make_folds(n = nrow(data), V = 5)\n\nFirst, let’s build a super learner library for the treatment mechanism. We can use the formula interface in hal9001 to give HAL specifications.\n\n# specify formulas\nformula_1 &lt;- ~ h(W1,s=0,k=20) + h(W2,s=0)\nformula_2 &lt;- ~ h(W1,s=0,k=20) + h(W2,s=0) + h(W1,W2,s=0,k=10)\nformula_3 &lt;- ~ h(W1,s=1,k=20) + h(W2,s=1) + h(W1,W2,s=1,k=10)\n\n# define candidate HAL learners\ng_hal_1 &lt;- Lrnr_hal9001$new(formula = formula_1)\ng_hal_2 &lt;- Lrnr_hal9001$new(formula = formula_2)\ng_hal_3 &lt;- Lrnr_hal9001$new(formula = formula_3)\n\n# define discrete SL library\ng_lib &lt;- Stack$new(g_hal_1, g_hal_2, g_hal_3)\ng_sl &lt;- Lrnr_sl$new(learners = g_lib, \n                    metalearner = Lrnr_cv_selector$new(loss_loglik_binomial))\n\nNext, we define a task for fitting the treatment mechanism.\n\n# define task for fitting the treatment mechanism\ntask_g &lt;- sl3_Task$new(data = data, \n                       covariates = c(\"W1\", \"W2\", \"W3\"),\n                       outcome = \"A\",\n                       outcome_type = \"binomial\",\n                       folds = folds)\n\n# fit the treatment mechanism and obtain predictions\nfit_g &lt;- g_sl$train(task_g)\ng1W &lt;- fit_g$predict(task_g)\n\nNow, let’s build a super learner library for the outcome regression.\n\n# specify formulas\nformula_Q_1 &lt;- ~ h(., s=0,k=20) + h(.,., s=0,k=20)\nformula_Q_2 &lt;- ~ h(W1,s=0,k=20) + h(W2,s=0) + h(W3,s=0,k=20) + \n  h(A,W1,s=0,k=10) + h(A,W3,s=0,k=10)\nformula_Q_3 &lt;- ~ h(W1,s=1,k=20) + h(W2,s=1) + h(W3,s=1,k=20) + \n  h(A,W1,s=1,k=10) + h(A,W3,s=1,k=10)\n\n# define candidate HAL learners\nQ_hal_1 &lt;- Lrnr_hal9001$new(formula = formula_Q_1)\nQ_hal_2 &lt;- Lrnr_hal9001$new(formula = formula_Q_2)\nQ_hal_3 &lt;- Lrnr_hal9001$new(formula = formula_Q_3)\n\n# define discrete SL library\nQ_lib &lt;- Stack$new(Q_hal_1, Q_hal_2, Q_hal_3)\nQ_sl &lt;- Lrnr_sl$new(learners = Q_lib, \n                    metalearner = Lrnr_cv_selector$new(loss_squared_error))\n\nSimilarly, we define tasks for fitting the outcome regression. Note that for the outcome regression, we need to create three tasks: one for fitting the observed outcome regression \\(E(Y\\mid A,W)\\), and two counterfactual tasks for \\(A=1\\) and \\(A=0\\) to obtain predictions under each treatment level.\n\n# define task for fitting the outcome regression (and counterfactual tasks)\ntask_Q &lt;- sl3_Task$new(data = data,\n                       covariates = c(\"A\", \"W1\", \"W2\", \"W3\"),\n                       outcome = \"Y\",\n                       outcome_type = \"continuous\",\n                       folds = folds)\ndata_A1 &lt;- data; data_A1$A &lt;- 1; data_A0 &lt;- data; data_A0$A &lt;- 0\ntask_Q1 &lt;- sl3_Task$new(data = data_A1,\n                        covariates = c(\"A\", \"W1\", \"W2\", \"W3\"),\n                        outcome = \"Y\",\n                        outcome_type = \"continuous\",\n                        folds = folds)\ntask_Q0 &lt;- sl3_Task$new(data = data_A0,\n                        covariates = c(\"A\", \"W1\", \"W2\", \"W3\"),\n                        outcome = \"Y\",\n                        outcome_type = \"continuous\",\n                        folds = folds)\n\n# fit the outcome regression and obtain predictions\nfit_Q &lt;- Q_sl$train(task_Q)\nQAW &lt;- fit_Q$predict(task_Q)\nQ1W &lt;- fit_Q$predict(task_Q1)\nQ0W &lt;- fit_Q$predict(task_Q0)\n\nFinally, let’s supply the nuisance parameter estimate g1W and initial estimates Q1W and Q0W to the tmle function to compute the targeted estimates.\n\ntmle_obj &lt;- tmle(W = data[, c(\"W1\", \"W2\", \"W3\")],\n                 Y = data$Y,\n                 A = data$A,\n                 Q = as.matrix(data.frame(Q0W=Q0W, Q1W=Q1W)),\n                 g1W = g1W,\n                 family = \"gaussian\",\n                 prescreenW.g   = FALSE,\n                 evalATT = FALSE)\nsummary(tmle_obj)\n\n Initial estimation of Q\n     Procedure: user-supplied values\n     Cross-validated R squared :  0.3927 \n\n Estimation of g (treatment mechanism)\n     Procedure: user-supplied values, ensemble\n\n Estimation of g.Z (intermediate variable assignment mechanism)\n     Procedure: No intermediate variable \n\n Estimation of g.Delta (missingness mechanism)\n     Procedure: No missingness, ensemble\n\n Bounds on g: (0.036, 1) \n\n Bounds on g for ATT/ATC: (0.036, 0.964) \n\n Marginal Mean under Treatment (EY1)\n   Parameter Estimate:  1.7267\n   Estimated Variance:  0.0045834\n              p-value:  &lt;2e-16\n    95% Conf Interval:  (1.594, 1.8594)\n\n Marginal Mean under Comparator (EY0)\n   Parameter Estimate:  1.0286\n   Estimated Variance:  0.0063651\n              p-value:  &lt;2e-16\n    95% Conf Interval:  (0.87219, 1.1849)\n\n Additive Effect\n   Parameter Estimate:  0.69815\n   Estimated Variance:  0.0088058\n              p-value:  1.0077e-13\n    95% Conf Interval:  (0.51423, 0.88207)\n\n\nLet’s compare the results to the truth:\n\ntruth &lt;- get_truth()\ntruth\n\n[1] 0.7226884"
+  },
+  {
+    "objectID": "atmle.html#estimand",
+    "href": "atmle.html#estimand",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
+    "section": "Estimand",
+    "text": "Estimand\nWe define the following target estimand: \\[\n\\Psi(P)=E_{P_W}[E_P(Y_1-Y_0\\mid S=1,W)],\n\\] which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where \\(P_W\\) is the distribution of \\(W\\) in the pooled population. Identification of this estimand requires the following assumptions:\n\nA1: \\((Y_0,Y_1)\\perp A\\mid S=1,W\\) (mean exchangeability in the RCT);\nA2: \\(0&lt;P(A=1\\mid S=1,W)&lt;1\\) (positivity of treatment assignment in the RCT);\nA3: \\(P(S=1\\mid W)&gt;0\\) (positivity of trial participation in the pooled population).\n\nAssumptions A1 and A2 hold under a well-designed RCT. Assumption A3 requires that for every covariate stratum in the pooled population, there is a non-zero probability of trial participation. This assumption may be violated if the RCT has strict eligibility criteria that exclude certain patient subgroups present in the RWD. To make this assumption more plausible, one could consider apply the same eligibility criteria to select the RWD as those used in the RCT.\nUnder A1–A3, the estimand is identified as \\[\n\\Psi(P_0)=E_0[E_0(Y\\mid S=1,W,A=1)-E_0(Y\\mid S=1,W,A=0)].\n\\]"
+  },
+  {
+    "objectID": "atmle.html#decomposition-of-the-target-estimand",
+    "href": "atmle.html#decomposition-of-the-target-estimand",
+    "title": "Analyzing Hybrid RCTs with Adaptive-TMLE",
+    "section": "Decomposition of the target estimand",
+    "text": "Decomposition of the target estimand\nNote that we can express our target estimand: \\[\n\\Psi(P_0)=E_0[E_0(Y\\mid S=1,W,A=1)-E_0(Y\\mid S=1,W,A=0)]\n\\] as a difference of two other estimands, the pooled-ATE estimand \\[\n\\tilde{\\Psi}(P_0)=E_0[E_0(Y\\mid W,A=1)-E_0(Y\\mid W,A=0)]\n\\] and the bias estimand: \\[\n\\begin{align*}\n\\Psi^\\#(P_0)&\\equiv\\tilde{\\Psi}(P_0)-\\Psi(P_0)\\\\\n\\Psi(P_0)&=\\tilde{\\Psi}(P_0)-\\color{red}{\\Psi^\\#(P_0)}\n\\end{align*}\n\\] That is, we can view our target estimand as a bias-corrected version of the pooled-ATE estimand \\(\\tilde{\\Psi}\\). The bias term \\(\\Psi^\\#\\) quantifies any kind of bias that resulted in differences between the pooled-ATE and the ATE in the RCT, including bias due to unmeasured confounding in the external data, and bias due to different adherence patterns between the RCT and external real-world environment.\nWith some algebra, the bias estimand could be written as \\[\n\\Psi^\\#(P_0)=E[\\Pi(0\\mid W,0)\\tau_S(W,0)-\\Pi(0\\mid W,1)\\tau_S(W,1)],\n\\] where \\[\n\\begin{align*}\n\\Pi(s\\mid W,A)&=P(S=s\\mid W,A),\\\\\n\\tau_S(W,A)&=E(Y\\mid S=1,W,A)-E(Y\\mid S=0,W,A).\n\\end{align*}\n\\] In our coding exercise, we will learn to use A-TMLE from the atmle R package to estimate \\(\\tilde{\\Psi}\\) and \\(\\Psi^\\#\\), respectively."
   }
 ]

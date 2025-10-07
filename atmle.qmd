@@ -5,59 +5,70 @@ format: html
 
 ## Introduction
 
-In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD).
+In this coding example, we demonstrate through a synthetic example of how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a non-inferiority randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD) to establish treatment effect superiority.
 
 ## Problem setup
 
-Suppose we observe $n$ independent and identically distributed observations of the random variable $O=(S,W,A,Y)\sim P_0\in\mathcal{M}$. Here, $S\in\{0,1\}$ indicates whether the patient belongs to the RCT; $W\in\mathbb{R}^d$ represents a set of baseline covariates; $A\in\{0,1\}$ denotes treatment assignment; and $Y\in\mathbb{R}$ is the clinical outcome of interest. We consider settings where both the RCT and external data include treatment and control arms. Although data fusion can serve many goals, here we focus on improving precision in estimating the treatment effect in the RCT.
+Suppose we observe $n$ copies of the random variable $O=(S,W,A,Y)$ sampled i.i.d from a probability distribution $P_0$ from a statistical model $\mathcal{M}$. Here, $S\in\{0,1\}$ indicates whether the patient belongs to the RCT; $W\in\mathbb{R}^d$ represents a set of baseline covariates; $A\in\{0,1\}$ denotes treatment assignment; and $Y\in\mathbb{R}$ is the clinical outcome of interest. We consider a setting where both the RCT and external data include treatment and control arms.
 
-## Candidate estimands
+## Estimand
 
-To define the estimands, we ask two questions: 
-
-1. What treatment effect do we want to learn?
-
-2. Over what population distribution should this effect be averaged?
-
-For the first question, since our interest lies in refining improving the precision of the treatment effect in the RCT, we define the effect within the trial ($S=1$). For the second question, we consider two choices: averaging over the **pooled** covariate distribution from both the RCT and external data, or averaging over the **RCT-only** covariate distribution.
-
-### Estimand 1: treatment effect in the RCT averaged over the pooled covariate distribution
-
-We first focus on the estimand that averages over the pooled covariate distribution. Formally, we define
+We define the following target estimand:
 $$
-\Psi_1(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
+\Psi(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
 $$
-which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where $P_W$ is the distribution of $W$ in the pooled population. Identification requires the following assumptions:
+which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where $P_W$ is the distribution of $W$ in the pooled population. Identification of this estimand requires the following assumptions:
 
-- A1: $(Y_0,Y_1)\perp A\mid S=1,W$ (exchangeability due to randomization in the RCT);
+- A1: $(Y_0,Y_1)\perp A\mid S=1,W$ (mean exchangeability in the RCT);
 
-- A2: $0<P(A=1\mid S=1,W)<1$ (treatment positivity in the RCT);
+- A2: $0<P(A=1\mid S=1,W)<1$ (positivity of treatment assignment in the RCT);
 
 - A3: $P(S=1\mid W)>0$ (positivity of trial participation in the pooled population).
 
+Assumptions A1 and A2 hold under a well-designed RCT. Assumption A3 requires that for every covariate stratum in the pooled population, there is a non-zero probability of trial participation. This assumption may be violated if the RCT has strict eligibility criteria that exclude certain patient subgroups present in the RWD. To make this assumption more plausible, one could consider apply the same eligibility criteria to select the RWD as those used in the RCT.
+
 Under A1–A3, the estimand is identified as
 $$
-\Psi_1(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)],
+\Psi(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)].
 $$
-where the outer expectation is taken over the pooled distribution of $W$.
 
-### Estimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution
+## Decomposition of the target estimand
 
-Next, we consider the estimand that averages over the RCT-only covariate distribution. Formally, we define
+Note that we can express our target estimand:
 $$
-\Psi_2(P)=E_{P_{W\mid S=1}}[E_P(Y_1-Y_0\mid S=1,W)],
+\Psi(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)]
 $$
-which represents the treatment effect within the trial, averaged over the covariate distribution of the RCT population. Identification requires only A1 and A2. No trial-enrollment positivity assumption on $S$ is needed because both the inner and outer expectations are restricted to the $S=1$ stratum. Under A1 and A2, the estimand is identified as
+as a difference of two other estimands, the **pooled-ATE** estimand
 $$
-\Psi_2(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)\mid S=1],
+\tilde{\Psi}(P_0)=E_0[E_0(Y\mid W,A=1)-E_0(Y\mid W,A=0)]
 $$
-where the outer expectation is taken over the covariate distribution of the RCT population.
+and the **bias** estimand: 
+$$
+\begin{align*}
+\Psi^\#(P_0)&\equiv\tilde{\Psi}(P_0)-\Psi(P_0)\\
+\Psi(P_0)&=\tilde{\Psi}(P_0)-\color{red}{\Psi^\#(P_0)}
+\end{align*}
+$$
+That is, we can view our target estimand as a bias-corrected version of the pooled-ATE estimand $\tilde{\Psi}$. The bias term $\Psi^\#$ quantifies any kind of bias that resulted in differences between the pooled-ATE and the ATE in the RCT, including bias due to unmeasured confounding in the external data, and bias due to different adherence patterns between the RCT and external real-world environment.
+
+With some algebra, the bias estimand could be written as
+$$
+\Psi^\#(P_0)=E[\Pi(0\mid W,0)\tau_S(W,0)-\Pi(0\mid W,1)\tau_S(W,1)],
+$$ 
+where 
+$$
+\begin{align*}
+\Pi(s\mid W,A)&=P(S=s\mid W,A),\\
+\tau_S(W,A)&=E(Y\mid S=1,W,A)-E(Y\mid S=0,W,A).
+\end{align*}
+$$
+In our coding exercise, we will learn to use A-TMLE from the `atmle` R package to estimate $\tilde{\Psi}$ and $\Psi^\#$, respectively.
 
 ## Loading required packages
 
-We first load the required packages.
+We first load the required packages:
 ```{r, message=FALSE}
-library(atmle)
+library(atmle) # not on CRAN yet; install from GitHub
 library(sl3)
 library(origami)
 library(purrr)
@@ -67,18 +78,29 @@ options(sl3.verbose = FALSE)
 
 ## Data summary
 ```{r}
-source("dgps/sim_data_atmle.R")
-
+seed <- 113
+data <- read.csv("dgps/data_atmle.csv")
 ```
 
 ## Candidate estimators
 
+We will compare the standard TMLE estimator with the A-TMLE estimator side-by-side.
+
 ### A standard TMLE estimator
 
+The canonical gradient of $\Psi$ at $P$ in a nonparametric model is given by
+$$
+\begin{align*}
+D_{\Psi,P}&=Q_P(1,W,1)-Q_P(1,W,0)-\Psi(P)\\
+&+\frac{S}{P(S=1\mid W)}\cdot\frac{2A-1}{g_P(A\mid 1,W)}(Y-Q_P(S,W,A)),
+\end{align*}
+$$
+where $Q_P(S,W,A)\equiv E_P(Y\mid S,W,A)$ and $g_P(A\mid S,W)\equiv P(A\mid S,W)$. Therefore, one could construct a standard TMLE estimator with clever covariate
+$$
+\frac{S}{P(S=1\mid W)}\cdot\frac{2A-1}{g_P(A\mid 1,W)}.
+$$
+This TMLE is implemented in the `nonparametric()` function in the `atmle` R package:
 ```{r}
-seed <- 113
-set.seed(seed)
-data <- read.csv("dgps/data_atmle.csv")
 sl_lib <- list(Lrnr_glm$new(),
                Lrnr_dbarts$new(),
                Lrnr_xgboost$new())
@@ -94,7 +116,11 @@ tmle_res <- nonparametric(data = data,
                           Q_method = sl_lib,
                           Q_pooling = TRUE,
                           v_folds = 5)
+```
 
+### Adaptive-TMLE estimator
+
+```{r, cache=TRUE}
 set.seed(seed)
 atmle_res <- atmle(data = data, 
                    S = "S", 
@@ -113,7 +139,13 @@ atmle_res <- atmle(data = data,
                    enumerate_basis_args = list(max_degree = 3,
                                                smoothness_orders = 1),
                    v_folds = 5)
+```
 
+Let's study the output of it a bit more closely.
+
+First, let's examine the point estimates. The pooled ATE estimate is 0.76, while the bias-correct ATE estimate is 0.29 We also see that the estimate of the bias is 0.47 Indeed, the bias correction is pushing us closer to the truth, which is 0.30.
+
+```{r}
 df_plot <- data.frame(Estimator = c("Standard TMLE",
                                     "Pooled-ATE", 
                                     "Bias-corrected ATE (A-TMLE)"),
@@ -134,33 +166,22 @@ ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   geom_point() +
   geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, size = 0.8) +
   geom_hline(yintercept = 0.2998021, linetype = "dashed", color = "red") +
-  geom_hline(yintercept = 0, linetype = "dotted", color = "blue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   theme_minimal(base_size = 13) +
   labs(title = "Point Estimates with 95% Confidence Intervals",
        y = "Estimate",
        x = "") +
   theme(legend.position = "none",
         plot.title = element_text(hjust = 0.5)) +
-    coord_flip()
+  coord_flip()
 ```
-
-### Adaptive-TMLE estimator
-
-```{r, cache=TRUE}
-
-```
-
-Let's study the output of it a bit more closely.
-
-First, let's examine the point estimates. The pooled ATE estimate is 1.37, while the bias-correct ATE estimate is 1.14. We also see that the estimate of the bias is 0.23. Indeed, the bias correction is pushing us closer to the truth, which is 1.15.
-
+Let's also compare the widths of the 95% confidence intervals:
 ```{r}
-
+ci_width_tmle <- tmle_res$upper_pooled_W-tmle_res$lower_pooled_W
+ci_width_atmle <- atmle_res$upper-atmle_res$lower
+round(ci_width_atmle/ci_width_tmle, 3)
 ```
-
-## Results
-
-## Interpreting the outputs
+The width of the 95% confidence interval of the A-TMLE estimator is about 90% of that of the standard TMLE estimator.
 
 ## References
 

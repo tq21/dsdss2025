@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Adaptive-TMLE for augmenting RCT with external RWD – DahShu Data Science Symposium 2025</title>
+<title>Analyzing Hybrid RCTs with Adaptive-TMLE – DahShu Data Science Symposium 2025</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -173,21 +173,15 @@ window.Quarto = {
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#problem-setup" id="toc-problem-setup" class="nav-link" data-scroll-target="#problem-setup">Problem setup</a></li>
-  <li><a href="#candidate-estimands" id="toc-candidate-estimands" class="nav-link" data-scroll-target="#candidate-estimands">Candidate estimands</a>
-  <ul class="collapse">
-  <li><a href="#estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution" id="toc-estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution" class="nav-link" data-scroll-target="#estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution">Estimand 1: treatment effect in the RCT averaged over the pooled covariate distribution</a></li>
-  <li><a href="#estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution" id="toc-estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution" class="nav-link" data-scroll-target="#estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution">Estimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution</a></li>
-  </ul></li>
+  <li><a href="#estimand" id="toc-estimand" class="nav-link" data-scroll-target="#estimand">Estimand</a></li>
+  <li><a href="#decomposition-of-the-target-estimand" id="toc-decomposition-of-the-target-estimand" class="nav-link" data-scroll-target="#decomposition-of-the-target-estimand">Decomposition of the target estimand</a></li>
   <li><a href="#loading-required-packages" id="toc-loading-required-packages" class="nav-link" data-scroll-target="#loading-required-packages">Loading required packages</a></li>
   <li><a href="#data-summary" id="toc-data-summary" class="nav-link" data-scroll-target="#data-summary">Data summary</a></li>
   <li><a href="#candidate-estimators" id="toc-candidate-estimators" class="nav-link" data-scroll-target="#candidate-estimators">Candidate estimators</a>
   <ul class="collapse">
-  <li><a href="#an-unadjusted-estimator" id="toc-an-unadjusted-estimator" class="nav-link" data-scroll-target="#an-unadjusted-estimator">An unadjusted estimator</a></li>
   <li><a href="#a-standard-tmle-estimator" id="toc-a-standard-tmle-estimator" class="nav-link" data-scroll-target="#a-standard-tmle-estimator">A standard TMLE estimator</a></li>
   <li><a href="#adaptive-tmle-estimator" id="toc-adaptive-tmle-estimator" class="nav-link" data-scroll-target="#adaptive-tmle-estimator">Adaptive-TMLE estimator</a></li>
   </ul></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
-  <li><a href="#interpreting-the-outputs" id="toc-interpreting-the-outputs" class="nav-link" data-scroll-target="#interpreting-the-outputs">Interpreting the outputs</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
@@ -197,7 +191,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Adaptive-TMLE for augmenting RCT with external RWD</h1>
+<h1 class="title">Analyzing Hybrid RCTs with Adaptive-TMLE</h1>
 </div>
 
 
@@ -216,70 +210,189 @@ window.Quarto = {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>In this example, we demonstrate how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD).</p>
+<p>In this coding example, we demonstrate through a synthetic example of how to use Adaptive-TMLE to improve the efficiency of treatment effect estimators of a non-inferiority randomized controlled trial (RCT) by augmenting it with external patient-level real-world data (RWD) to establish treatment effect superiority.</p>
 </section>
 <section id="problem-setup" class="level2">
 <h2 class="anchored" data-anchor-id="problem-setup">Problem setup</h2>
-<p>Suppose we observe <span class="math inline">\(n\)</span> independent and identically distributed observations of the random variable <span class="math inline">\(O=(S,W,A,Y)\sim P_0\in\mathcal{M}\)</span>. Here, <span class="math inline">\(S\in\{0,1\}\)</span> indicates whether the patient belongs to the RCT; <span class="math inline">\(W\in\mathbb{R}^d\)</span> represents a set of baseline covariates; <span class="math inline">\(A\in\{0,1\}\)</span> denotes treatment assignment; and <span class="math inline">\(Y\in\mathbb{R}\)</span> is the clinical outcome of interest. We consider settings where both the RCT and external data include treatment and control arms. Although data fusion can serve many goals, here we focus on improving precision in estimating the treatment effect in the RCT.</p>
+<p>Suppose we observe <span class="math inline">\(n\)</span> copies of the random variable <span class="math inline">\(O=(S,W,A,Y)\)</span> sampled i.i.d from a probability distribution <span class="math inline">\(P_0\)</span> from a statistical model <span class="math inline">\(\mathcal{M}\)</span>. Here, <span class="math inline">\(S\in\{0,1\}\)</span> indicates whether the patient belongs to the RCT; <span class="math inline">\(W\in\mathbb{R}^d\)</span> represents a set of baseline covariates; <span class="math inline">\(A\in\{0,1\}\)</span> denotes treatment assignment; and <span class="math inline">\(Y\in\mathbb{R}\)</span> is the clinical outcome of interest. We consider a setting where both the RCT and external data include treatment and control arms.</p>
 </section>
-<section id="candidate-estimands" class="level2">
-<h2 class="anchored" data-anchor-id="candidate-estimands">Candidate estimands</h2>
-<p>To define the estimands, we ask two questions:</p>
-<ol type="1">
-<li><p>What treatment effect do we want to learn?</p></li>
-<li><p>Over what population distribution should this effect be averaged?</p></li>
-</ol>
-<p>For the first question, since our interest lies in refining improving the precision of the treatment effect in the RCT, we define the effect within the trial (<span class="math inline">\(S=1\)</span>). For the second question, we consider two choices: averaging over the <strong>pooled</strong> covariate distribution from both the RCT and external data, or averaging over the <strong>RCT-only</strong> covariate distribution.</p>
-<section id="estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution" class="level3">
-<h3 class="anchored" data-anchor-id="estimand-1-treatment-effect-in-the-rct-averaged-over-the-pooled-covariate-distribution">Estimand 1: treatment effect in the RCT averaged over the pooled covariate distribution</h3>
-<p>We first focus on the estimand that averages over the pooled covariate distribution. Formally, we define <span class="math display">\[
-\Psi_1(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
-\]</span> which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where <span class="math inline">\(P_W\)</span> is the distribution of <span class="math inline">\(W\)</span> in the pooled population. Identification requires the following assumptions:</p>
+<section id="estimand" class="level2">
+<h2 class="anchored" data-anchor-id="estimand">Estimand</h2>
+<p>We define the following target estimand: <span class="math display">\[
+\Psi(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
+\]</span> which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where <span class="math inline">\(P_W\)</span> is the distribution of <span class="math inline">\(W\)</span> in the pooled population. Identification of this estimand requires the following assumptions:</p>
 <ul>
-<li><p>A1: <span class="math inline">\((Y_0,Y_1)\perp A\mid S=1,W\)</span> (exchangeability due to randomization in the RCT);</p></li>
-<li><p>A2: <span class="math inline">\(0&lt;P(A=1\mid S=1,W)&lt;1\)</span> (treatment positivity in the RCT);</p></li>
+<li><p>A1: <span class="math inline">\((Y_0,Y_1)\perp A\mid S=1,W\)</span> (mean exchangeability in the RCT);</p></li>
+<li><p>A2: <span class="math inline">\(0&lt;P(A=1\mid S=1,W)&lt;1\)</span> (positivity of treatment assignment in the RCT);</p></li>
 <li><p>A3: <span class="math inline">\(P(S=1\mid W)&gt;0\)</span> (positivity of trial participation in the pooled population).</p></li>
 </ul>
+<p>Assumptions A1 and A2 hold under a well-designed RCT. Assumption A3 requires that for every covariate stratum in the pooled population, there is a non-zero probability of trial participation. This assumption may be violated if the RCT has strict eligibility criteria that exclude certain patient subgroups present in the RWD. To make this assumption more plausible, one could consider apply the same eligibility criteria to select the RWD as those used in the RCT.</p>
 <p>Under A1–A3, the estimand is identified as <span class="math display">\[
-\Psi_1(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)],
-\]</span> where the outer expectation is taken over the pooled distribution of <span class="math inline">\(W\)</span>.</p>
+\Psi(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)].
+\]</span></p>
 </section>
-<section id="estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution" class="level3">
-<h3 class="anchored" data-anchor-id="estimand-2-treatment-effect-in-the-rct-averaged-over-the-rct-only-covariate-distribution">Estimand 2: treatment effect in the RCT averaged over the RCT-only covariate distribution</h3>
-<p>Next, we consider the estimand that averages over the RCT-only covariate distribution. Formally, we define <span class="math display">\[
-\Psi_2(P)=E_{P_{W\mid S=1}}[E_P(Y_1-Y_0\mid S=1,W)],
-\]</span> which represents the treatment effect within the trial, averaged over the covariate distribution of the RCT population. Identification requires only A1 and A2. No trial-enrollment positivity assumption on <span class="math inline">\(S\)</span> is needed because both the inner and outer expectations are restricted to the <span class="math inline">\(S=1\)</span> stratum. Under A1 and A2, the estimand is identified as <span class="math display">\[
-\Psi_2(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)\mid S=1],
-\]</span> where the outer expectation is taken over the covariate distribution of the RCT population.</p>
-</section>
+<section id="decomposition-of-the-target-estimand" class="level2">
+<h2 class="anchored" data-anchor-id="decomposition-of-the-target-estimand">Decomposition of the target estimand</h2>
+<p>Note that we can express our target estimand: <span class="math display">\[
+\Psi(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)]
+\]</span> as a difference of two other estimands, the <strong>pooled-ATE</strong> estimand <span class="math display">\[
+\tilde{\Psi}(P_0)=E_0[E_0(Y\mid W,A=1)-E_0(Y\mid W,A=0)]
+\]</span> and the <strong>bias</strong> estimand: <span class="math display">\[
+\begin{align*}
+\Psi^\#(P_0)&amp;\equiv\tilde{\Psi}(P_0)-\Psi(P_0)\\
+\Psi(P_0)&amp;=\tilde{\Psi}(P_0)-\color{red}{\Psi^\#(P_0)}
+\end{align*}
+\]</span> That is, we can view our target estimand as a bias-corrected version of the pooled-ATE estimand <span class="math inline">\(\tilde{\Psi}\)</span>. The bias term <span class="math inline">\(\Psi^\#\)</span> quantifies any kind of bias that resulted in differences between the pooled-ATE and the ATE in the RCT, including bias due to unmeasured confounding in the external data, and bias due to different adherence patterns between the RCT and external real-world environment.</p>
+<p>With some algebra, the bias estimand could be written as <span class="math display">\[
+\Psi^\#(P_0)=E[\Pi(0\mid W,0)\tau_S(W,0)-\Pi(0\mid W,1)\tau_S(W,1)],
+\]</span> where <span class="math display">\[
+\begin{align*}
+\Pi(s\mid W,A)&amp;=P(S=s\mid W,A),\\
+\tau_S(W,A)&amp;=E(Y\mid S=1,W,A)-E(Y\mid S=0,W,A).
+\end{align*}
+\]</span> In our coding exercise, we will learn to use A-TMLE from the <code>atmle</code> R package to estimate <span class="math inline">\(\tilde{\Psi}\)</span> and <span class="math inline">\(\Psi^\#\)</span>, respectively.</p>
 </section>
 <section id="loading-required-packages" class="level2">
 <h2 class="anchored" data-anchor-id="loading-required-packages">Loading required packages</h2>
-<p>We first load the required packages.</p>
+<p>We first load the required packages:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(atmle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(atmle) <span class="co"># not on CRAN yet; install from GitHub</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sl3)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(origami)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">sl3.verbose =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="data-summary" class="level2">
 <h2 class="anchored" data-anchor-id="data-summary">Data summary</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>seed <span class="ot">&lt;-</span> <span class="dv">113</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"dgps/data_atmle.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 <section id="candidate-estimators" class="level2">
 <h2 class="anchored" data-anchor-id="candidate-estimators">Candidate estimators</h2>
-<section id="an-unadjusted-estimator" class="level3">
-<h3 class="anchored" data-anchor-id="an-unadjusted-estimator">An unadjusted estimator</h3>
-</section>
+<p>We will compare the standard TMLE estimator with the A-TMLE estimator side-by-side.</p>
 <section id="a-standard-tmle-estimator" class="level3">
 <h3 class="anchored" data-anchor-id="a-standard-tmle-estimator">A standard TMLE estimator</h3>
+<p>The canonical gradient of <span class="math inline">\(\Psi\)</span> at <span class="math inline">\(P\)</span> in a nonparametric model is given by <span class="math display">\[
+\begin{align*}
+D_{\Psi,P}&amp;=Q_P(1,W,1)-Q_P(1,W,0)-\Psi(P)\\
+&amp;+\frac{S}{P(S=1\mid W)}\cdot\frac{2A-1}{g_P(A\mid 1,W)}(Y-Q_P(S,W,A)),
+\end{align*}
+\]</span> where <span class="math inline">\(Q_P(S,W,A)\equiv E_P(Y\mid S,W,A)\)</span> and <span class="math inline">\(g_P(A\mid S,W)\equiv P(A\mid S,W)\)</span>. Therefore, one could construct a standard TMLE estimator with clever covariate <span class="math display">\[
+\frac{S}{P(S=1\mid W)}\cdot\frac{2A-1}{g_P(A\mid 1,W)}.
+\]</span> This TMLE is implemented in the <code>nonparametric()</code> function in the <code>atmle</code> R package:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sl_lib <span class="ot">&lt;-</span> <span class="fu">list</span>(Lrnr_glm<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>               Lrnr_dbarts<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>               Lrnr_xgboost<span class="sc">$</span><span class="fu">new</span>())</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(seed)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>tmle_res <span class="ot">&lt;-</span> <span class="fu">nonparametric</span>(<span class="at">data =</span> data,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">S =</span> <span class="st">"S"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                          <span class="at">W =</span> <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>, <span class="st">"W4"</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                          <span class="at">A =</span> <span class="st">"A"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                          <span class="at">Y =</span> <span class="st">"Y"</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                          <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                          <span class="at">Pi_method =</span> sl_lib,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                          <span class="at">g_method =</span> <span class="st">"glm"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                          <span class="at">Q_method =</span> sl_lib,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                          <span class="at">Q_pooling =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>                          <span class="at">v_folds =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 <section id="adaptive-tmle-estimator" class="level3">
 <h3 class="anchored" data-anchor-id="adaptive-tmle-estimator">Adaptive-TMLE estimator</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(seed)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>atmle_res <span class="ot">&lt;-</span> <span class="fu">atmle</span>(<span class="at">data =</span> data, </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">S =</span> <span class="st">"S"</span>, </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">W =</span> <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>, <span class="st">"W4"</span>), </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">A =</span> <span class="st">"A"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Y =</span> <span class="st">"Y"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                   <span class="at">controls_only =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                   <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                   <span class="at">theta_method =</span> sl_lib, </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Pi_method =</span> sl_lib, </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                   <span class="at">g_method =</span> sl_lib, </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">theta_tilde_method =</span> sl_lib, </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">bias_working_model =</span> <span class="st">"HAL"</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                   <span class="at">pooled_working_model =</span> <span class="st">"HAL"</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>                   <span class="at">target_method =</span> <span class="st">"oneshot"</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>                   <span class="at">enumerate_basis_args =</span> <span class="fu">list</span>(<span class="at">max_degree =</span> <span class="dv">3</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                                               <span class="at">smoothness_orders =</span> <span class="dv">1</span>),</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                   <span class="at">v_folds =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>learning θ(W,A)=E(Y|W,A)...Done!
+learning g(1|W)=P(A=1|W)...Done!
+learning Π(S=1|W,A)=P(S=1|W,A)...Done!
+learning τ(W,A)=E(Y|S=1,W,A)-E(Y|S=0,W,A)...Done!
+[1] -0.002126372
+learning θ̃(W)=E(Y|W)...Done!
+learning Τ(W)=E(Y|W,A=1)-E(Y|W,A=0)...Done!
+
+targeting beta_A...Done!
+
+Pooled ATE: 0.75524 (0.53173, 0.97874)
+Bias: 0.46795 (0.27789, 0.658)
+Bias-corrected ATE: 0.28729 (0.01486, 0.55972)</code></pre>
+</div>
+</div>
+<p>Let’s study the output of it a bit more closely.</p>
+<p>First, let’s examine the point estimates. The pooled ATE estimate is 0.76, while the bias-correct ATE estimate is 0.29 We also see that the estimate of the bias is 0.47 Indeed, the bias correction is pushing us closer to the truth, which is 0.30.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Estimator =</span> <span class="fu">c</span>(<span class="st">"Standard TMLE"</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                                    <span class="st">"Pooled-ATE"</span>, </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                    <span class="st">"Bias-corrected ATE (A-TMLE)"</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Estimate =</span> <span class="fu">c</span>(tmle_res<span class="sc">$</span>psi_pooled_W, </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                   atmle_res<span class="sc">$</span>psi_tilde_est, </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                                   atmle_res<span class="sc">$</span>est),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Lower =</span> <span class="fu">c</span>(tmle_res<span class="sc">$</span>lower_pooled_W, </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                                atmle_res<span class="sc">$</span>psi_tilde_lower, </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                                atmle_res<span class="sc">$</span>lower),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Upper =</span> <span class="fu">c</span>(tmle_res<span class="sc">$</span>upper_pooled_W, </span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                                atmle_res<span class="sc">$</span>psi_tilde_upper, </span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                                atmle_res<span class="sc">$</span>upper))</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>df_plot<span class="sc">$</span>Estimator <span class="ot">&lt;-</span> <span class="fu">factor</span>(df_plot<span class="sc">$</span>Estimator, </span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                            <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Standard TMLE"</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Bias-corrected ATE (A-TMLE)"</span>, </span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Pooled-ATE"</span>))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_plot, <span class="fu">aes</span>(<span class="at">x =</span> Estimator, <span class="at">y =</span> Estimate, <span class="at">fill =</span> Estimator)) <span class="sc">+</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> Lower, <span class="at">ymax =</span> Upper), <span class="at">width =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.2998021</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray"</span>) <span class="sc">+</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Point Estimates with 95% Confidence Intervals"</span>,</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Estimate"</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="atmle_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Let’s also compare the widths of the 95% confidence intervals:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ci_width_tmle <span class="ot">&lt;-</span> tmle_res<span class="sc">$</span>upper_pooled_W<span class="sc">-</span>tmle_res<span class="sc">$</span>lower_pooled_W</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>ci_width_atmle <span class="ot">&lt;-</span> atmle_res<span class="sc">$</span>upper<span class="sc">-</span>atmle_res<span class="sc">$</span>lower</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(ci_width_atmle<span class="sc">/</span>ci_width_tmle, <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.904</code></pre>
+</div>
+</div>
+<p>The width of the 95% confidence interval of the A-TMLE estimator is about 90% of that of the standard TMLE estimator.</p>
 </section>
-</section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-</section>
-<section id="interpreting-the-outputs" class="level2">
-<h2 class="anchored" data-anchor-id="interpreting-the-outputs">Interpreting the outputs</h2>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
