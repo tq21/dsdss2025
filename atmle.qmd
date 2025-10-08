@@ -13,60 +13,48 @@ Suppose we observe $n$ copies of the random variable $O=(S,W,A,Y)$ sampled i.i.d
 
 ## Estimand
 
-We define the following target estimand:
-$$
+We define the following target estimand: $$
 \Psi(P)=E_{P_W}[E_P(Y_1-Y_0\mid S=1,W)],
-$$
-which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where $P_W$ is the distribution of $W$ in the pooled population. Identification of this estimand requires the following assumptions:
+$$ which represents the treatment effect within the trial, averaged over the pooled covariate distribution, where $P_W$ is the distribution of $W$ in the pooled population. Identification of this estimand requires the following assumptions:
 
-- A1: $(Y_0,Y_1)\perp A\mid S=1,W$ (mean exchangeability in the RCT);
+-   A1: $(Y_0,Y_1)\perp A\mid S=1,W$ (mean exchangeability in the RCT);
 
-- A2: $0<P(A=1\mid S=1,W)<1$ (positivity of treatment assignment in the RCT);
+-   A2: $0<P(A=1\mid S=1,W)<1$ (positivity of treatment assignment in the RCT);
 
-- A3: $P(S=1\mid W)>0$ (positivity of trial participation in the pooled population).
+-   A3: $P(S=1\mid W)>0$ (positivity of trial participation in the pooled population).
 
 Assumptions A1 and A2 hold under a well-designed RCT. Assumption A3 requires that for every covariate stratum in the pooled population, there is a non-zero probability of trial participation. This assumption may be violated if the RCT has strict eligibility criteria that exclude certain patient subgroups present in the RWD. To make this assumption more plausible, one could consider apply the same eligibility criteria to select the RWD as those used in the RCT.
 
-Under A1–A3, the estimand is identified as
-$$
+Under A1–A3, the estimand is identified as $$
 \Psi(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)].
 $$
 
 ## Decomposition of the target estimand
 
-Note that we can express our target estimand:
-$$
+Note that we can express our target estimand: $$
 \Psi(P_0)=E_0[E_0(Y\mid S=1,W,A=1)-E_0(Y\mid S=1,W,A=0)]
-$$
-as a difference of two other estimands, the **pooled-ATE** estimand
-$$
+$$ as a difference of two other estimands, the **pooled-ATE** estimand $$
 \tilde{\Psi}(P_0)=E_0[E_0(Y\mid W,A=1)-E_0(Y\mid W,A=0)]
-$$
-and the **bias** estimand: 
-$$
+$$ and the **bias** estimand: $$
 \begin{align*}
 \Psi^\#(P_0)&\equiv\tilde{\Psi}(P_0)-\Psi(P_0)\\
 \Psi(P_0)&=\tilde{\Psi}(P_0)-\color{red}{\Psi^\#(P_0)}
 \end{align*}
-$$
-That is, we can view our target estimand as a bias-corrected version of the pooled-ATE estimand $\tilde{\Psi}$. The bias term $\Psi^\#$ quantifies any kind of bias that resulted in differences between the pooled-ATE and the ATE in the RCT, including bias due to unmeasured confounding in the external data, and bias due to different adherence patterns between the RCT and external real-world environment.
+$$ That is, we can view our target estimand as a bias-corrected version of the pooled-ATE estimand $\tilde{\Psi}$. The bias term $\Psi^\#$ quantifies any kind of bias that resulted in differences between the pooled-ATE and the ATE in the RCT, including bias due to unmeasured confounding in the external data, and bias due to different adherence patterns between the RCT and external real-world environment.
 
-With some algebra, the bias estimand could be written as
-$$
+With some algebra, the bias estimand could be written as $$
 \Psi^\#(P_0)=E[\Pi(0\mid W,0)\tau_S(W,0)-\Pi(0\mid W,1)\tau_S(W,1)],
-$$ 
-where 
-$$
+$$ where $$
 \begin{align*}
 \Pi(s\mid W,A)&=P(S=s\mid W,A),\\
 \tau_S(W,A)&=E(Y\mid S=1,W,A)-E(Y\mid S=0,W,A).
 \end{align*}
-$$
-In our coding exercise, we will learn to use A-TMLE from the `atmle` R package to estimate $\tilde{\Psi}$ and $\Psi^\#$, respectively.
+$$ In our coding exercise, we will learn to use A-TMLE from the `atmle` R package to estimate $\tilde{\Psi}$ and $\Psi^\#$, respectively.
 
 ## Loading required packages
 
 We first load the required packages:
+
 ```{r, message=FALSE}
 library(atmle) # not on CRAN yet; install from GitHub
 library(sl3)
@@ -77,6 +65,7 @@ options(sl3.verbose = FALSE)
 ```
 
 ## Data summary
+
 ```{r}
 seed <- 113
 data <- read.csv("dgps/data_atmle.csv")
@@ -88,18 +77,15 @@ We will compare the standard TMLE estimator with the A-TMLE estimator side-by-si
 
 ### A standard TMLE estimator
 
-The canonical gradient of $\Psi$ at $P$ in a nonparametric model is given by
-$$
+The canonical gradient of $\Psi$ at $P$ in a nonparametric model is given by $$
 \begin{align*}
 D_{\Psi,P}&=Q_P(1,W,1)-Q_P(1,W,0)-\Psi(P)\\
 &+\frac{S}{P(S=1\mid W)}\cdot\frac{2A-1}{g_P(A\mid 1,W)}(Y-Q_P(S,W,A)),
 \end{align*}
-$$
-where $Q_P(S,W,A)\equiv E_P(Y\mid S,W,A)$ and $g_P(A\mid S,W)\equiv P(A\mid S,W)$. Therefore, one could construct a standard TMLE estimator with clever covariate
-$$
+$$ where $Q_P(S,W,A)\equiv E_P(Y\mid S,W,A)$ and $g_P(A\mid S,W)\equiv P(A\mid S,W)$. Therefore, one could construct a standard TMLE estimator with clever covariate $$
 \frac{S}{P(S=1\mid W)}\cdot\frac{2A-1}{g_P(A\mid 1,W)}.
-$$
-This TMLE is implemented in the `nonparametric()` function in the `atmle` R package:
+$$ This TMLE is implemented in the `nonparametric()` function in the `atmle` R package:
+
 ```{r}
 sl_lib <- list(Lrnr_glm$new(),
                Lrnr_dbarts$new(),
@@ -175,12 +161,15 @@ ggplot(df_plot, aes(x = Estimator, y = Estimate, fill = Estimator)) +
         plot.title = element_text(hjust = 0.5)) +
   coord_flip()
 ```
+
 Let's also compare the widths of the 95% confidence intervals:
+
 ```{r}
 ci_width_tmle <- tmle_res$upper_pooled_W-tmle_res$lower_pooled_W
 ci_width_atmle <- atmle_res$upper-atmle_res$lower
 round(ci_width_atmle/ci_width_tmle, 3)
 ```
+
 The width of the 95% confidence interval of the A-TMLE estimator is about 90% of that of the standard TMLE estimator.
 
 ## References

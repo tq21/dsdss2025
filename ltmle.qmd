@@ -1,0 +1,48 @@
+---
+title: "Estimating Effect of Counterfactual Treatment Regimes in longitudinal data using LTMLE"
+format: html
+---
+
+## Introduction
+
+```{r}
+library(ltmle)
+```
+
+
+```{r}
+set.seed(123)
+data <- sim_data(n=2000, K=4)
+```
+
+```{r}
+# define nodes
+Anodes <- paste0("A", 1:K)
+Cnodes <- paste0("C", 1:K)
+Lnodes <- paste0("L", 1:K)
+Ynodes <- paste0("Y", 1:K)
+
+# encode knowledge on conditional independence
+gform <- c(
+  A1 = "A1 ~ W1 + W2",
+  C1 = "C1 ~ W1 + W2",
+  A2 = "A2 ~ W1 + W2 + L1",
+  C2 = "C2 ~ W1 + W2 + L1 + A1",
+  A3 = "A3 ~ W1 + W2 + L2",
+  C3 = "C3 ~ W1 + W2 + L1 + L2 + A1 + A2",
+  A4 = "A4 ~ W1 + W2 + L3",
+  C4 = "C4 ~ W1 + W2 + L1 + L2 + L3 + A1 + A2 + A3"
+)
+
+abar_static <- rep(1, K)
+fit_static <- ltmle(data = data,
+                    Anodes = Anodes,
+                    Cnodes = Cnodes,
+                    Lnodes = Lnodes,
+                    Ynodes = Ynodes,
+                    abar = abar_static,
+                    survivalOutcome = FALSE,
+                    gform = gform)
+
+summary(fit_static)
+```
