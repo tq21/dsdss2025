@@ -57,23 +57,31 @@ remotes::install_github("tq21/atmle")
 
 ## Relevant books/papers for this short course
 
--   van der Laan, Mark and Sherri Rose (2011) Targeted Learning: Causal Inference for Observational and Experimental Data. Springer Science & Business Media. [\[Link\]](https://link.springer.com/book/10.1007/978-1-4419-9782-1)
+-   van der Laan, Mark and Sherri Rose (2011) Targeted Learning: Causal Inference for Observational and Experimental Data. *Springer Science & Business Media*. [\[Link\]](https://link.springer.com/book/10.1007/978-1-4419-9782-1)
 
--   van der Laan, Mark and Sherri Rose (2018) Targeted Learning in Data Science: Causal Inference for Complex Longitudinal Studies. Springer Science & Business Media. [\[Link\]](https://link.springer.com/book/10.1007/978-3-319-65304-4)
+-   van der Laan, Mark and Sherri Rose (2018) Targeted Learning in Data Science: Causal Inference for Complex Longitudinal Studies. *Springer Science & Business Media*. [\[Link\]](https://link.springer.com/book/10.1007/978-3-319-65304-4)
 
--   van der Laan, Mark. “A generally efficient targeted minimum loss based estimator based on the highly adaptive lasso.” The international journal of biostatistics 13.2 (2017). [\[Link\]](https://www.degruyterbrill.com/document/doi/10.1515/ijb-2015-0097/html)
+-   Petersen, Maya and Mark van der Laan (2014) "Causal models and learning from data: integrating causal modeling and statistical estimation." *Epidemiology* 25, no. 3: 418-426. [\[Link\]](https://journals.lww.com/epidem/abstract/2014/05000/causal_models_and_learning_from_data__integrating.13.aspx)
 
--   Benkeser, David, and Mark van der Laan. “The highly adaptive lasso estimator.” 2016 IEEE international conference on data science and advanced analytics (DSAA). IEEE, 2016. [\[Link\]](https://pmc.ncbi.nlm.nih.gov/articles/PMC5662030/)
+-   Dang, Lauren et al (2023). "A causal roadmap for generating high-quality real-world evidence." *Journal of Clinical and Translational Science*, 7(1), p. e212. doi:10.1017/cts.2023.635. [\[Link\]](https://www.cambridge.org/core/journals/journal-of-clinical-and-translational-science/article/causal-roadmap-for-generating-highquality-realworld-evidence/3F30968E70E7A13EE7FC41A46A8C3AAD)
 
--   van der Laan, Mark. “Higher order spline highly adaptive lasso estimators of functional parameters: Pointwise asymptotic normality and uniform convergence rates.” arXiv preprint arXiv:2301.13354 (2023). [\[Link\]](https://arxiv.org/abs/2301.13354)
+-   van der Laan, Mark, Eric Polley, and Alan Hubbard (2007). "Super learner." *Statistical applications in genetics and molecular biology*, 6, Article25. https://doi.org/10.2202/1544-6115.1309 [\[Link\]](https://www.degruyterbrill.com/document/doi/10.2202/1544-6115.1309/html)
 
--   van der Laan, Lars, Marco Carone, Alex Luedtke, and Mark van der Laan. “Adaptive debiased machine learning using data-driven model selection techniques.” arXiv preprint arXiv:2307.12544 (2023). [\[Link\]](https://arxiv.org/abs/2307.12544)
+-   van der Laan, Mark and Daniel Rubin (2006). "Targeted Maximum Likelihood Learning." *The International Journal of Biostatistics*, vol. 2, no. 1. [\[Link\]](https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1043/html)
 
--   van der Laan, Mark, Sky Qiu, Jens Tarp, and Lars van der Laan. “Adaptive-TMLE for the average treatment effect based on randomized controlled trial augmented with real-world data.” arXiv preprint arXiv:2405.07186 (2024). [\[Link\]](https://arxiv.org/abs/2405.07186)
+-   van der Laan, Mark (2017). "A generally efficient targeted minimum loss based estimator based on the highly adaptive lasso." *The international journal of biostatistics*. [\[Link\]](https://www.degruyterbrill.com/document/doi/10.1515/ijb-2015-0097/html)
 
--   Qiu, Sky, Jens Tarp, Andrew Mertens, and Mark van der Laan. “An estimator-robust design for augmenting randomized controlled trial with external real-world data.” arXiv preprint arXiv:2501.17835 (2025). [\[Link\]](https://arxiv.org/abs/2501.17835)
+-   Benkeser, David, and Mark van der Laan. "The highly adaptive lasso estimator." *2016 IEEE international conference on data science and advanced analytics (DSAA).* IEEE, 2016. [\[Link\]](https://pmc.ncbi.nlm.nih.gov/articles/PMC5662030/)
 
--   Shirakawa, Toru, Yi Li, Yulun Wu, Sky Qiu, Yuxuan Li, Mingduo Zhao, Hiroyasu Iso, and Mark van der Laan. “Longitudinal targeted minimum loss-based estimation with temporal-difference heterogeneous transformer.” Proceedings of the 41st International Conference on Machine Learning, PMLR 235:45097-45113 (2024). [\[Link\]](https://arxiv.org/abs/2404.04399)
+-   van der Laan, Mark. "Higher order spline highly adaptive lasso estimators of functional parameters: Pointwise asymptotic normality and uniform convergence rates." arXiv preprint arXiv:2301.13354 (2023). [\[Link\]](https://arxiv.org/abs/2301.13354)
+
+-   van der Laan, Lars, Marco Carone, Alex Luedtke, and Mark van der Laan. "Adaptive debiased machine learning using data-driven model selection techniques." arXiv preprint arXiv:2307.12544 (2023). [\[Link\]](https://arxiv.org/abs/2307.12544)
+
+-   van der Laan, Mark, Sky Qiu, Jens Tarp, and Lars van der Laan. "Adaptive-TMLE for the average treatment effect based on randomized controlled trial augmented with real-world data." arXiv preprint arXiv:2405.07186 (2024). [\[Link\]](https://arxiv.org/abs/2405.07186)
+
+-   Qiu, Sky, Jens Tarp, Andrew Mertens, and Mark van der Laan. "An estimator-robust design for augmenting randomized controlled trial with external real-world data." arXiv preprint arXiv:2501.17835 (2025). [\[Link\]](https://arxiv.org/abs/2501.17835)
+
+-   Shirakawa, Toru, Yi Li, Yulun Wu, Sky Qiu, Yuxuan Li, Mingduo Zhao, Hiroyasu Iso, and Mark van der Laan. "Longitudinal targeted minimum loss-based estimation with temporal-difference heterogeneous transformer." *Proceedings of the 41st International Conference on Machine Learning*, PMLR 235:45097-45113 (2024). [\[Link\]](https://arxiv.org/abs/2404.04399)
 
 ## Additional resources
 
