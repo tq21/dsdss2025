@@ -106,8 +106,4 @@ summary(result.rule)
 # rule is a function applied to each row of data which returns a numeric vector
 # of the same length as Anodes
 
-
-
-
-
 ltmle(data, Anodes=c("A1", "A2"), Cnodes = "C", Lnodes="L", Ynodes="Y", abar=c(1, 0))

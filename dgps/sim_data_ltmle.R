@@ -19,7 +19,7 @@ sim_data <- function(n,
 
   # generate over time
   for (t in 1:K) {
-    # full past up to t-1 (as generated; censoring applied later)
+    # past summaries up to t-1
     past_L <- if (t == 1) 0 else Reduce(`+`, lapply(1:(t-1), function(s) L_hist[[s]]))
     past_A <- if (t == 1) 0 else Reduce(`+`, lapply(1:(t-1), function(s) A_hist[[s]]))
     past_Y <- if (t == 1) 0 else Reduce(`+`, lapply(1:(t-1), function(s) Y_hist[[s]]))
@@ -28,17 +28,16 @@ sim_data <- function(n,
     mu_Lt <- 0.25*W1 + 0.25*W2 + 0.30*past_L + 0.20*past_A + 0.15*past_Y
     L_t <- rnorm(n, mean = mu_Lt + 0.3*L_prev + 0.2*A_prev, sd = 1)
 
-    # A_t (only depends on W and L_{t-1} unless a_bar is provided)
+    # A_t
     if (is.null(a_bar)) {
-      pA_t <- plogis(-0.2 + 0.35*W1 + 0.15*W2 + 0.6*L_prev)
-      A_t <- rbinom(n, 1, pA_t)
+      A_t <- rbinom(n, 1, plogis(-0.2 + 0.35*W1 + 0.15*W2 + 0.6*L_prev + 0.5*L_t))
     } else {
       A_t <- rep(a_bar[t], n)
     }
 
     # C_t: 1 = observed, 0 = censored
     if (is.null(a_bar)) {
-      C_t <- rbinom(n, 1, plogis(2.6 - 0.4*W2 - 0.25*past_L - 0.25*past_A - 0.20*past_Y))
+      C_t <- rbinom(n, 1, plogis(2.6 - 0.4*W2 - 0.25*past_L - 0.25*past_A - 0.20*past_Y - 0.20*L_t - 0.20*A_t))
     } else {
       C_t <- rep(1, n)
     }
@@ -47,13 +46,13 @@ sim_data <- function(n,
     pY_t <- plogis(-1.0 + 0.7*A_t + 0.6*L_t + 0.25*W1 + 0.10*past_L + 0.10*past_A + 0.10*past_Y)
     Y_t <- rbinom(n, 1, pY_t)
 
-    # append to data
+    # write columns
     dt[[paste0("L", t)]] <- L_t
     dt[[paste0("A", t)]] <- A_t
     dt[[paste0("C", t)]] <- C_t
     dt[[paste0("Y", t)]] <- Y_t
 
-    # save histories
+    # store histories
     L_hist[[t]] <- L_t; A_hist[[t]] <- A_t; Y_hist[[t]] <- Y_t
 
     # update lags
@@ -83,4 +82,10 @@ sim_data <- function(n,
   }
 
   return(dt)
+}
+
+get_truth <- function(n_large = 1e7, K = 4) {
+  data_A1 <- sim_data(n_large, K = K, a_bar = rep(1, K))
+  data_A0 <- sim_data(n_large, K = K, a_bar = rep(0, K))
+  return(mean(data_A1[[paste0("Y", K)]])/mean(data_A0[[paste0("Y", K)]]))
 }

@@ -1,48 +1,79 @@
 ---
-title: "Estimating Effect of Counterfactual Treatment Regimes in longitudinal data using LTMLE"
+title: "Estimating Effect of Counterfactual Treatment Regimes in Longitudinal Data with LTMLE"
 format: html
 ---
 
 ## Introduction
 
-```{r}
+In this coding example, we demonstrate how to estimate the effect of a user-specified counterfactual treatment regime (or any causal contrasts of two regimes) in longitudinal data using the `ltmle` package in R.
+
+## Loading required packages
+
+We first load the required packages:
+```{r, message=FALSE}
 library(ltmle)
+library(dplyr)
 ```
 
+## Data
+
+Let's first inspect the example data we have:
+```{r}
+head(data)
+```
+
+In the example data, we have 4 time points (K=4). At each time point, we have a binary treatment variable `A`, a binary censoring variable `C`, a continuous time-varying covariate `L`, and a binary outcome variable `Y`. There are also two baseline covariates `W1` and `W2`.
 
 ```{r}
 set.seed(123)
-data <- sim_data(n=2000, K=4)
-```
+data <- sim_data(n=5000, K=4)
 
-```{r}
 # define nodes
 Anodes <- paste0("A", 1:K)
 Cnodes <- paste0("C", 1:K)
 Lnodes <- paste0("L", 1:K)
 Ynodes <- paste0("Y", 1:K)
+```
 
+Now, suppose we are interested in estimating the mean outcome at the last time point (i.e., `Y4`) if everyone had received treatment at all time points (i.e., `A1=A2=A3=A4=1`), compared to if everyone had received control at all time points (i.e., `A1=A2=A3=A4=0`). That is, our target estimand is given by:
+$$
+E[Y_4^{\bar{A}=(1,1,1,1)} - Y_4^{\bar{A}=(0,0,0,0)}].
+$$
+
+Let's estimate this target using the `ltmle()` function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates $(W_1,W_2)$, the most recent $(L_{t-1})$ and the current $(L_t)$ time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the `gform` argument in `ltmle()`:
+```{r}
 # encode knowledge on conditional independence
 gform <- c(
-  A1 = "A1 ~ W1 + W2",
-  C1 = "C1 ~ W1 + W2",
-  A2 = "A2 ~ W1 + W2 + L1",
-  C2 = "C2 ~ W1 + W2 + L1 + A1",
-  A3 = "A3 ~ W1 + W2 + L2",
-  C3 = "C3 ~ W1 + W2 + L1 + L2 + A1 + A2",
-  A4 = "A4 ~ W1 + W2 + L3",
-  C4 = "C4 ~ W1 + W2 + L1 + L2 + L3 + A1 + A2 + A3"
+  A1 = "A1 ~ W1 + W2 + L1",
+  C1 = "C1 ~ W1 + W2 + L1 + A1",
+  A2 = "A2 ~ W1 + W2 + L1 + L2",
+  C2 = "C2 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2",
+  A3 = "A3 ~ W1 + W2 + L2 + L3",
+  C3 = "C3 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3",
+  A4 = "A4 ~ W1 + W2 + L3 + L4",
+  C4 = "C4 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3 + Y3 + L4 + A4"
 )
+```
 
-abar_static <- rep(1, K)
-fit_static <- ltmle(data = data,
-                    Anodes = Anodes,
-                    Cnodes = Cnodes,
-                    Lnodes = Lnodes,
-                    Ynodes = Ynodes,
-                    abar = abar_static,
-                    survivalOutcome = FALSE,
-                    gform = gform)
+Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: `A1=A2=A3=A4=1` and `A1=A2=A3=A4=0`:
+```{r}
+abar <- list(rep(1, K), rep(0, K))
+abar
+```
 
-summary(fit_static)
+Now, we are ready to run the `ltmle()`:
+```{r}
+fit_ltmle <- ltmle(data = data,
+                   Anodes = Anodes,
+                   Cnodes = Cnodes,
+                   Lnodes = Lnodes,
+                   Ynodes = Ynodes,
+                   abar = abar,
+                   survivalOutcome = FALSE,
+                   gform = gform)
+```
+
+Finally, we can summarize the results:
+```{r}
+summary(fit_ltmle)
 ```
