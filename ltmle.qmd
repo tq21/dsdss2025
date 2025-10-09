@@ -5,29 +5,33 @@ format: html
 
 ## Introduction
 
-In this coding example, we demonstrate how to estimate the effect of a user-specified counterfactual treatment regime (or any causal contrasts of two regimes) in longitudinal data using the `ltmle` package in R.
+In this coding example, we demonstrate how to estimate the effect of a user-specified counterfactual treatment regime (or any causal contrasts of two regimes) in a longitudinal data setting using the `ltmle` package in R.
 
 ## Loading required packages
 
-We first load the required packages:
+The `ltmle` R package implements the longitudinal sequential-regression based TMLE. It supports evaluations of static or dynamic treatment regimes. The package is available on CRAN.
 ```{r, message=FALSE}
 library(ltmle)
-library(dplyr)
 ```
 
 ## Data
 
-Let's first inspect the example data we have:
+In this coding example, we will use a synthetic data included in the `dgps` folder that mimics a longitudinal study with $K=4$ time points. The data contains 5000 patients.
+
+Let's first inspect the example data:
 ```{r}
+data <- read.csv("dgps/data_ltmle.csv")
 head(data)
 ```
 
-In the example data, we have 4 time points (K=4). At each time point, we have a binary treatment variable `A`, a binary censoring variable `C`, a continuous time-varying covariate `L`, and a binary outcome variable `Y`. There are also two baseline covariates `W1` and `W2`.
+In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The assumed temporal ordering of the nodes is:
+$$
+L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
+$$
+This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control (e.g., HbA1c < 7%) is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
 
+We assume that the physician's treatment decision at each visit depends only on the baseline covariates and the patient's current and most recent blood pressure readings, reflecting realistic clinical decision-making. The censoring variable $(C_t)$ indicates whether the patient was lost to follow-up after visit $t$.
 ```{r}
-set.seed(123)
-data <- sim_data(n=5000, K=4)
-
 # define nodes
 Anodes <- paste0("A", 1:K)
 Cnodes <- paste0("C", 1:K)
