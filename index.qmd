@@ -22,6 +22,7 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 | 10.20am-10.40am | Coffee/Tea break, Q&A                                                                                                   |                                                                                                                                                                            |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 10.40am-12pm    | Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, `hal9001` software | -   `hal9001` [\[vignette\]](https://tlverse.org/hal9001/articles/intro_hal9001.html)                                                                                      |
+|                 |                                                                                                                         | -   Introduction to `hal9001` \[TODO\]                                                                                                                                     |
 |                 |                                                                                                                         | -   Estimating conditional average treatment effects [\[code example\]](cate.qmd)                                                                                          |
 |                 |                                                                                                                         | -   Estimating conditional densities [\[code example\]](cde.qmd)                                                                                                           |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -36,7 +37,8 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 3.30pm-3.40pm   | Coffee/Tea break, Q&A                                                                                                   |                                                                                                                                                                            |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 3.40pm-4.40pm   | L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE                                                             | -   DeepLTMLE example                                                                                                                                                      |
+| 3.40pm-4.40pm   | L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE                                                             | -   Estimating effect of counterfactual treatment regimes in longitudinal data with `ltmle` [\[code example\]](ltmle.qmd)                                                  |
+|                 |                                                                                                                         | -   DeepLTMLE example \[TODO\]                                                                                                                                             |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 4.40pm-5pm      | Closing remarks, Q&A                                                                                                    |                                                                                                                                                                            |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -48,11 +50,25 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 -   R packages required:
 
 ```{r, eval=FALSE}
-install.packages("hal9001")
-install.packages("haldensify")
-install.packages("MASS")
-remotes::install_github("tlverse/sl3")
-remotes::install_github("tq21/atmle")
+# install CRAN packages
+cran_pkgs <- c("hal9001", "glmnet", "plotly", "haldensify", "origami", "tmle",
+               "MASS", "ggplot2", "dbarts", "xgboost", "ltmle")
+missing_cran <- cran_pkgs[!(cran_pkgs %in% installed.packages()[, "Package"])]
+if (length(missing_cran) > 0) {
+  install.packages(missing_cran)
+}
+
+# install GitHub packages
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+github_pkgs <- c("tlverse/sl3", "tq21/atmle")
+for (pkg in github_pkgs) {
+  pkg_name <- basename(pkg)
+  if (!requireNamespace(pkg_name, quietly = TRUE)) {
+    remotes::install_github(pkg)
+  }
+}
 ```
 
 ## Relevant books/papers for this short course

@@ -6,10 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Mark van der Laan (UC Berkeley) and Sky Qiu (UC Berkeley)">
-<meta name="dcterms.date" content="2025-10-10">
 
-<title>Highly Adaptive Lasso and Targeted Learning 📿🎯 – DahShu Data Science Symposium 2025</title>
+<title>Estimating Effect of Counterfactual Treatment Regimes in Longitudinal Data with LTMLE – DahShu Data Science Symposium 2025</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -103,6 +101,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -125,7 +152,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
 </ul>
@@ -144,15 +171,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#welcome-to-the-short-course" id="toc-welcome-to-the-short-course" class="nav-link active" data-scroll-target="#welcome-to-the-short-course">Welcome to the short course!</a></li>
-  <li><a href="#schedule" id="toc-schedule" class="nav-link" data-scroll-target="#schedule">Schedule</a></li>
-  <li><a href="#environment-setup" id="toc-environment-setup" class="nav-link" data-scroll-target="#environment-setup">Environment setup</a></li>
-  <li><a href="#relevant-bookspapers-for-this-short-course" id="toc-relevant-bookspapers-for-this-short-course" class="nav-link" data-scroll-target="#relevant-bookspapers-for-this-short-course">Relevant books/papers for this short course</a></li>
-  <li><a href="#additional-resources" id="toc-additional-resources" class="nav-link" data-scroll-target="#additional-resources">Additional resources</a></li>
-  <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a>
-  <ul class="collapse">
-  <li><a href="#maintainers-contact" id="toc-maintainers-contact" class="nav-link" data-scroll-target="#maintainers-contact">Maintainers &amp; contact</a></li>
-  </ul></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#loading-required-packages" id="toc-loading-required-packages" class="nav-link" data-scroll-target="#loading-required-packages">Loading required packages</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
   </ul>
 </nav>
     </div>
@@ -161,27 +182,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Highly Adaptive Lasso and Targeted Learning 📿🎯</h1>
-<p class="subtitle lead">Short course</p>
+<h1 class="title">Estimating Effect of Counterfactual Treatment Regimes in Longitudinal Data with LTMLE</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Mark van der Laan (UC Berkeley) and Sky Qiu (UC Berkeley) </p>
-          </div>
-  </div>
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">October 10, 2025</p>
-    </div>
-  </div>
   
     
   </div>
@@ -191,175 +199,169 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="welcome-to-the-short-course" class="level2">
-<h2 class="anchored" data-anchor-id="welcome-to-the-short-course">Welcome to the short course!</h2>
-<p>This page contains slides and code examples for the short course on Highly Adaptive Lasso and Targeted Learning at the DahShu Data Science Symposium 2025.</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In this coding example, we demonstrate how to estimate the effect of a user-specified counterfactual treatment regime (or any causal contrasts of two regimes) in a longitudinal data setting using the <code>ltmle</code> package in R.</p>
 </section>
-<section id="schedule" class="level2">
-<h2 class="anchored" data-anchor-id="schedule">Schedule</h2>
-<p>Here is the schedule for the day (9am-5pm, October 18th, 2025):</p>
-<table class="caption-top table">
-<tbody>
-<tr class="odd">
-<td><strong>Time</strong></td>
-<td><strong>Topic</strong></td>
-<td><strong>Links to materials</strong></td>
-</tr>
-<tr class="even">
-<td>9am-10.20am</td>
-<td>Introduction to Targeted Learning; The Roadmap; Super Learning; TMLE</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>10.20am-10.40am</td>
-<td>Coffee/Tea break, Q&amp;A</td>
-<td></td>
-</tr>
-<tr class="even">
-<td>10.40am-12pm</td>
-<td>Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, <code>hal9001</code> software</td>
-<td><ul>
-<li><code>hal9001</code> <a href="https://tlverse.org/hal9001/articles/intro_hal9001.html">[vignette]</a></li>
-<li>Introduction to <code>hal9001</code> [TODO]</li>
-<li>Estimating conditional average treatment effects <a href="./cate.html">[code example]</a></li>
-<li>Estimating conditional densities <a href="./cde.html">[code example]</a></li>
-</ul></td>
-</tr>
-<tr class="odd">
-<td>12pm-1pm</td>
-<td>Lunch break</td>
-<td></td>
-</tr>
-<tr class="even">
-<td>1pm-2.20pm</td>
-<td>Higher order splines, examples of 1st and 2nd order HAL, rate of convergence, HAL-TMLE</td>
-<td><ul>
-<li>Examples of the k-th order spline representation: <a href="./k1d3.html">[k=1, d=3]</a>, <a href="./k2d3.html">[k=2, d=3]</a></li>
-<li>Specifying a diverse super learner library including different specifications (smoothness orders, subspaces) of candidate HAL learners <a href="./hal_dsl.html">[code example]</a></li>
-</ul></td>
-</tr>
-<tr class="odd">
-<td>2.20pm-2.30pm</td>
-<td>Coffee/Tea break, Q&amp;A</td>
-<td></td>
-</tr>
-<tr class="even">
-<td>2.30pm-3.30pm</td>
-<td>HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs</td>
-<td><ul>
-<li>Adaptive-TMLE for augmenting an RCT with external RWD <a href="./atmle.html">[code example]</a></li>
-</ul></td>
-</tr>
-<tr class="odd">
-<td>3.30pm-3.40pm</td>
-<td>Coffee/Tea break, Q&amp;A</td>
-<td></td>
-</tr>
-<tr class="even">
-<td>3.40pm-4.40pm</td>
-<td>L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE</td>
-<td><ul>
-<li>Estimating effect of counterfactual treatment regimes in longitudinal data with <code>ltmle</code> <a href="./ltmle.html">[code example]</a></li>
-<li>DeepLTMLE example [TODO]</li>
-</ul></td>
-</tr>
-<tr class="odd">
-<td>4.40pm-5pm</td>
-<td>Closing remarks, Q&amp;A</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="environment-setup" class="level2">
-<h2 class="anchored" data-anchor-id="environment-setup">Environment setup</h2>
-<ul>
-<li>R (≥ 4.3) installed.</li>
-<li>Recommended IDE: RStudio.</li>
-<li>R packages required:</li>
-</ul>
+<section id="loading-required-packages" class="level2">
+<h2 class="anchored" data-anchor-id="loading-required-packages">Loading required packages</h2>
+<p>The <code>ltmle</code> R package implements the longitudinal sequential-regression based TMLE. It supports evaluations of static or dynamic treatment regimes. The package is available on CRAN.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install CRAN packages</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>cran_pkgs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"hal9001"</span>, <span class="st">"glmnet"</span>, <span class="st">"plotly"</span>, <span class="st">"haldensify"</span>, <span class="st">"origami"</span>, <span class="st">"tmle"</span>,</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>               <span class="st">"MASS"</span>, <span class="st">"ggplot2"</span>, <span class="st">"dbarts"</span>, <span class="st">"xgboost"</span>, <span class="st">"ltmle"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>missing_cran <span class="ot">&lt;-</span> cran_pkgs[<span class="sc">!</span>(cran_pkgs <span class="sc">%in%</span> <span class="fu">installed.packages</span>()[, <span class="st">"Package"</span>])]</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(missing_cran) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">install.packages</span>(missing_cran)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># install GitHub packages</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(<span class="st">"remotes"</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">install.packages</span>(<span class="st">"remotes"</span>)</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>github_pkgs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"tlverse/sl3"</span>, <span class="st">"tq21/atmle"</span>)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (pkg <span class="cf">in</span> github_pkgs) {</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  pkg_name <span class="ot">&lt;-</span> <span class="fu">basename</span>(pkg)</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(pkg_name, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    remotes<span class="sc">::</span><span class="fu">install_github</span>(pkg)</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ltmle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="relevant-bookspapers-for-this-short-course" class="level2">
-<h2 class="anchored" data-anchor-id="relevant-bookspapers-for-this-short-course">Relevant books/papers for this short course</h2>
-<ul>
-<li><p>van der Laan, Mark and Sherri Rose (2011) Targeted Learning: Causal Inference for Observational and Experimental Data. <em>Springer Science &amp; Business Media</em>. <a href="https://link.springer.com/book/10.1007/978-1-4419-9782-1">[Link]</a></p></li>
-<li><p>van der Laan, Mark and Sherri Rose (2018) Targeted Learning in Data Science: Causal Inference for Complex Longitudinal Studies. <em>Springer Science &amp; Business Media</em>. <a href="https://link.springer.com/book/10.1007/978-3-319-65304-4">[Link]</a></p></li>
-<li><p>Petersen, Maya and Mark van der Laan (2014) “Causal models and learning from data: integrating causal modeling and statistical estimation.” <em>Epidemiology</em> 25, no. 3: 418-426. <a href="https://journals.lww.com/epidem/abstract/2014/05000/causal_models_and_learning_from_data__integrating.13.aspx">[Link]</a></p></li>
-<li><p>Dang, Lauren et al (2023). “A causal roadmap for generating high-quality real-world evidence.” <em>Journal of Clinical and Translational Science</em>, 7(1), p.&nbsp;e212. doi:10.1017/cts.2023.635. <a href="https://www.cambridge.org/core/journals/journal-of-clinical-and-translational-science/article/causal-roadmap-for-generating-highquality-realworld-evidence/3F30968E70E7A13EE7FC41A46A8C3AAD">[Link]</a></p></li>
-<li><p>van der Laan, Mark, Eric Polley, and Alan Hubbard (2007). “Super learner.” <em>Statistical applications in genetics and molecular biology</em>, 6, Article25. https://doi.org/10.2202/1544-6115.1309 <a href="https://www.degruyterbrill.com/document/doi/10.2202/1544-6115.1309/html">[Link]</a></p></li>
-<li><p>van der Laan, Mark and Daniel Rubin (2006). “Targeted Maximum Likelihood Learning.” <em>The International Journal of Biostatistics</em>, vol.&nbsp;2, no. 1. <a href="https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1043/html">[Link]</a></p></li>
-<li><p>van der Laan, Mark (2017). “A generally efficient targeted minimum loss based estimator based on the highly adaptive lasso.” <em>The international journal of biostatistics</em>. <a href="https://www.degruyterbrill.com/document/doi/10.1515/ijb-2015-0097/html">[Link]</a></p></li>
-<li><p>Benkeser, David, and Mark van der Laan. “The highly adaptive lasso estimator.” <em>2016 IEEE international conference on data science and advanced analytics (DSAA).</em> IEEE, 2016. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5662030/">[Link]</a></p></li>
-<li><p>van der Laan, Mark. “Higher order spline highly adaptive lasso estimators of functional parameters: Pointwise asymptotic normality and uniform convergence rates.” arXiv preprint arXiv:2301.13354 (2023). <a href="https://arxiv.org/abs/2301.13354">[Link]</a></p></li>
-<li><p>van der Laan, Lars, Marco Carone, Alex Luedtke, and Mark van der Laan. “Adaptive debiased machine learning using data-driven model selection techniques.” arXiv preprint arXiv:2307.12544 (2023). <a href="https://arxiv.org/abs/2307.12544">[Link]</a></p></li>
-<li><p>van der Laan, Mark, Sky Qiu, Jens Tarp, and Lars van der Laan. “Adaptive-TMLE for the average treatment effect based on randomized controlled trial augmented with real-world data.” arXiv preprint arXiv:2405.07186 (2024). <a href="https://arxiv.org/abs/2405.07186">[Link]</a></p></li>
-<li><p>Qiu, Sky, Jens Tarp, Andrew Mertens, and Mark van der Laan. “An estimator-robust design for augmenting randomized controlled trial with external real-world data.” arXiv preprint arXiv:2501.17835 (2025). <a href="https://arxiv.org/abs/2501.17835">[Link]</a></p></li>
-<li><p>Shirakawa, Toru, Yi Li, Yulun Wu, Sky Qiu, Yuxuan Li, Mingduo Zhao, Hiroyasu Iso, and Mark van der Laan. “Longitudinal targeted minimum loss-based estimation with temporal-difference heterogeneous transformer.” <em>Proceedings of the 41st International Conference on Machine Learning</em>, PMLR 235:45097-45113 (2024). <a href="https://arxiv.org/abs/2404.04399">[Link]</a></p></li>
-</ul>
-</section>
-<section id="additional-resources" class="level2">
-<h2 class="anchored" data-anchor-id="additional-resources">Additional resources</h2>
-<ul>
-<li><p>Center for Targeted Machine Learning and Causal Inference at Berkeley: <a href="https://ctml.berkeley.edu/" class="uri">https://ctml.berkeley.edu/</a></p></li>
-<li><p>Introduction to causal inference by Maya Petersen and Laura Balzer: <a href="https://ctml.berkeley.edu/introduction-causal-inference" class="uri">https://ctml.berkeley.edu/introduction-causal-inference</a></p></li>
-<li><p>Targeted Learning in R: Causal Data Science with the tlverse Software Ecosystem (tlverse handbook): <a href="https://tlverse.org/tlverse-handbook/" class="uri">https://tlverse.org/tlverse-handbook/</a></p></li>
-<li><p>Kat Hoffman’s blog and tutorial on Targeted Learning: <a href="https://www.khstats.com/blog/tmle/tutorial" class="uri">https://www.khstats.com/blog/tmle/tutorial</a></p></li>
-<li><p>Check out <a href="https://www.youtube.com/@putnamdatasciences1309/videos">TL Revolution’s YouTube channel</a> for FDA funded webinar series on Targeted Learning:</p></li>
-</ul>
-<div style="max-width: 480px; margin: auto;">
-<div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/PrPNP5RVcLg" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>In this coding example, we will use a synthetic data included in the <code>dgps</code> folder that mimics a longitudinal study with <span class="math inline">\(K=4\)</span> time points. The data contains 5000 patients.</p>
+<p>Let’s first inspect the example data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"dgps/data_ltmle.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           W1 W2         L1 A1 C1 Y1         L2 A2 C2 Y2        L3 A3 C3 Y3
+1 -0.56047565  0 -1.5571097  0  1  0 -2.2444741  0  1  0 -1.471409  0  1  0
+2 -0.23017749  0 -0.2616424  1  1  0  0.2115774  0  1  0  0.912274  0  1  0
+3  1.55870831  0 -0.1587545  1  1  0  2.2445080  1  1  0  1.780963  1  1  1
+4  0.07050839  1  0.6537786  0  1  0  2.6829173  0  0 NA        NA NA NA NA
+5  0.12928774  1  0.8111676  0  1  1 -0.4408271  1  1  1  2.263297  1  1  1
+6  1.71506499  1  2.4020889  1  1  0  3.1421296  1  1  1  3.816034  1  0 NA
+          L4 A4 C4 Y4
+1 -3.3924447  1  1  0
+2 -0.5059628  1  1  0
+3  2.8658147  1  0 NA
+4         NA NA NA NA
+5  1.9901538  1  0 NA
+6         NA NA NA NA</code></pre>
 </div>
-<div style="max-width: 480px; margin: auto;">
-<div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/8Q9dfW3oOi4" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>
 </div>
-<div style="max-width: 480px; margin: auto;">
-<div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/ANuvSrkJ3Ag" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>
+<p>In the example data, we have four time points. At each time point <span class="math inline">\(t\)</span>, we observe a continuous time-varying covariate <span class="math inline">\(L_t\)</span>, a binary treatment variable <span class="math inline">\(A_t\)</span>, a binary censoring indicator <span class="math inline">\(C_t\)</span>, and a binary outcome variable <span class="math inline">\(Y_t\)</span>. In addition, there are two baseline covariates, <span class="math inline">\(W_1\)</span> and <span class="math inline">\(W_2\)</span>. The assumed temporal ordering of the nodes is: <span class="math display">\[
+L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
+\]</span> This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient’s blood pressure is first measured <span class="math inline">\((L_t)\)</span>, after which the clinician decides whether to intensify diabetes treatment <span class="math inline">\((A_t)\)</span>. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control (e.g., HbA1c &lt; 7%) is achieved <span class="math inline">\((Y_t)\)</span>. The two baseline covariates include the patient’s age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease <span class="math inline">\((W_2)\)</span>.</p>
+<p>We assume that the physician’s treatment decision at each visit depends only on the baseline covariates and the patient’s current and most recent blood pressure readings, reflecting realistic clinical decision-making. The censoring variable <span class="math inline">\((C_t)\)</span> indicates whether the patient was lost to follow-up after visit <span class="math inline">\(t\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define nodes</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>Anodes <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"A"</span>, <span class="dv">1</span><span class="sc">:</span>K)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>Cnodes <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"C"</span>, <span class="dv">1</span><span class="sc">:</span>K)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>Lnodes <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"L"</span>, <span class="dv">1</span><span class="sc">:</span>K)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>Ynodes <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"Y"</span>, <span class="dv">1</span><span class="sc">:</span>K)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div style="max-width: 480px; margin: auto;">
-<div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/eSytQfqZsv8" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>
+<p>Now, suppose we are interested in estimating the mean outcome at the last time point (i.e., <code>Y4</code>) if everyone had received treatment at all time points (i.e., <code>A1=A2=A3=A4=1</code>), compared to if everyone had received control at all time points (i.e., <code>A1=A2=A3=A4=0</code>). That is, our target estimand is given by: <span class="math display">\[
+E[Y_4^{\bar{A}=(1,1,1,1)} - Y_4^{\bar{A}=(0,0,0,0)}].
+\]</span></p>
+<p>Let’s estimate this target using the <code>ltmle()</code> function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates <span class="math inline">\((W_1,W_2)\)</span>, the most recent <span class="math inline">\((L_{t-1})\)</span> and the current <span class="math inline">\((L_t)\)</span> time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the <code>gform</code> argument in <code>ltmle()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># encode knowledge on conditional independence</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>gform <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">A1 =</span> <span class="st">"A1 ~ W1 + W2 + L1"</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">C1 =</span> <span class="st">"C1 ~ W1 + W2 + L1 + A1"</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">A2 =</span> <span class="st">"A2 ~ W1 + W2 + L1 + L2"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">C2 =</span> <span class="st">"C2 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2"</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">A3 =</span> <span class="st">"A3 ~ W1 + W2 + L2 + L3"</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">C3 =</span> <span class="st">"C3 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">A4 =</span> <span class="st">"A4 ~ W1 + W2 + L3 + L4"</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">C4 =</span> <span class="st">"C4 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3 + Y3 + L4 + A4"</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div style="max-width: 480px; margin: auto;">
-<div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/YnXVAtzF4ss" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>
+<p>Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: <code>A1=A2=A3=A4=1</code> and <code>A1=A2=A3=A4=0</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>abar <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">rep</span>(<span class="dv">1</span>, K), <span class="fu">rep</span>(<span class="dv">0</span>, K))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>abar</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] 1 1 1 1
+
+[[2]]
+[1] 0 0 0 0</code></pre>
 </div>
-<div style="max-width: 480px; margin: auto;">
-<div class="quarto-video ratio ratio-16x9"><iframe data-external="1" src="https://www.youtube.com/embed/qr5JolEAuJU" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=""></iframe></div>
 </div>
-</section>
-<section id="license" class="level2">
-<h2 class="anchored" data-anchor-id="license">License</h2>
-<ul>
-<li>Slides and code examples © 2025 by the authors.</li>
-<li>Code is MIT-licensed unless noted.</li>
-</ul>
-<hr>
-<section id="maintainers-contact" class="level3">
-<h3 class="anchored" data-anchor-id="maintainers-contact">Maintainers &amp; contact</h3>
-<p>For questions or issues, open a GitHub <a href="https://github.com/tq21/hal_short_course/issues">issue</a> or email <a href="mailto:sky.qiu@berkeley.edu">sky.qiu@berkeley.edu</a>.</p>
-<hr>
+<p>Now, we are ready to run the <code>ltmle()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fit_ltmle <span class="ot">&lt;-</span> <span class="fu">ltmle</span>(<span class="at">data =</span> data,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Anodes =</span> Anodes,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Cnodes =</span> Cnodes,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Lnodes =</span> Lnodes,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Ynodes =</span> Ynodes,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">abar =</span> abar,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                   <span class="at">survivalOutcome =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                   <span class="at">gform =</span> gform)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Qform not specified, using defaults:</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>formula for Y1:</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Q.kplus1 ~ W1 + W2 + L1 + A1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>formula for Y2:</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Q.kplus1 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>formula for Y3:</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Q.kplus1 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>formula for Y4:</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Q.kplus1 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3 +     Y3 + L4 + A4</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code></code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Estimate of time to completion: &lt; 1 minute</code></pre>
+</div>
+</div>
+<p>Finally, we can summarize the results:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_ltmle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Estimator:  tmle 
+Call:
+ltmle(data = data, Anodes = Anodes, Cnodes = Cnodes, Lnodes = Lnodes, 
+    Ynodes = Ynodes, survivalOutcome = FALSE, gform = gform, 
+    abar = abar)
+
+Treatment Estimate:
+   Parameter Estimate:  0.75182 
+    Estimated Std Err:  0.041583 
+              p-value:  &lt;2e-16 
+    95% Conf Interval: (0.67031, 0.83332) 
+
+Control Estimate:
+   Parameter Estimate:  0.45203 
+    Estimated Std Err:  0.05186 
+              p-value:  &lt;2e-16 
+    95% Conf Interval: (0.35038, 0.55367) 
+
+Additive Treatment Effect:
+   Parameter Estimate:  0.29979 
+    Estimated Std Err:  0.066472 
+              p-value:  6.4831e-06 
+    95% Conf Interval: (0.16951, 0.43007) 
+
+Relative Risk:
+   Parameter Estimate:  1.6632 
+  Est Std Err log(RR):  0.12736 
+              p-value:  6.4839e-05 
+    95% Conf Interval: (1.2958, 2.1348) 
+
+Odds Ratio:
+   Parameter Estimate:  3.6723 
+  Est Std Err log(OR):  0.30578 
+              p-value:  2.0991e-05 
+    95% Conf Interval: (2.0168, 6.6867) </code></pre>
+</div>
+</div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->

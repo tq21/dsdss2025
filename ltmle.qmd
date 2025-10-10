@@ -10,6 +10,7 @@ In this coding example, we demonstrate how to estimate the effect of a user-spec
 ## Loading required packages
 
 The `ltmle` R package implements the longitudinal sequential-regression based TMLE. It supports evaluations of static or dynamic treatment regimes. The package is available on CRAN.
+
 ```{r, message=FALSE}
 library(ltmle)
 ```
@@ -19,32 +20,33 @@ library(ltmle)
 In this coding example, we will use a synthetic data included in the `dgps` folder that mimics a longitudinal study with $K=4$ time points. The data contains 5000 patients.
 
 Let's first inspect the example data:
+
 ```{r}
 data <- read.csv("dgps/data_ltmle.csv")
 head(data)
 ```
 
-In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The assumed temporal ordering of the nodes is:
-$$
+In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The assumed temporal ordering of the nodes is: $$
 L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
-$$
-This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control (e.g., HbA1c < 7%) is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
+$$ This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control (e.g., HbA1c \< 7%) is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
 
 We assume that the physician's treatment decision at each visit depends only on the baseline covariates and the patient's current and most recent blood pressure readings, reflecting realistic clinical decision-making. The censoring variable $(C_t)$ indicates whether the patient was lost to follow-up after visit $t$.
+
 ```{r}
 # define nodes
+K <- 4
 Anodes <- paste0("A", 1:K)
 Cnodes <- paste0("C", 1:K)
 Lnodes <- paste0("L", 1:K)
 Ynodes <- paste0("Y", 1:K)
 ```
 
-Now, suppose we are interested in estimating the mean outcome at the last time point (i.e., `Y4`) if everyone had received treatment at all time points (i.e., `A1=A2=A3=A4=1`), compared to if everyone had received control at all time points (i.e., `A1=A2=A3=A4=0`). That is, our target estimand is given by:
-$$
+Now, suppose we are interested in estimating the mean outcome at the last time point (i.e., `Y4`) if everyone had received treatment at all time points (i.e., `A1=A2=A3=A4=1`), compared to if everyone had received control at all time points (i.e., `A1=A2=A3=A4=0`). That is, our target estimand is given by: $$
 E[Y_4^{\bar{A}=(1,1,1,1)} - Y_4^{\bar{A}=(0,0,0,0)}].
 $$
 
 Let's estimate this target using the `ltmle()` function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates $(W_1,W_2)$, the most recent $(L_{t-1})$ and the current $(L_t)$ time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the `gform` argument in `ltmle()`:
+
 ```{r}
 # encode knowledge on conditional independence
 gform <- c(
@@ -60,12 +62,14 @@ gform <- c(
 ```
 
 Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: `A1=A2=A3=A4=1` and `A1=A2=A3=A4=0`:
+
 ```{r}
 abar <- list(rep(1, K), rep(0, K))
 abar
 ```
 
 Now, we are ready to run the `ltmle()`:
+
 ```{r}
 fit_ltmle <- ltmle(data = data,
                    Anodes = Anodes,
@@ -78,6 +82,7 @@ fit_ltmle <- ltmle(data = data,
 ```
 
 Finally, we can summarize the results:
+
 ```{r}
 summary(fit_ltmle)
 ```
