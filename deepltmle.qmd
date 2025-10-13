@@ -4,16 +4,30 @@
 
 First, let's load the required packages. The python package `dltmle` implements the DeepLTMLE.
 
-```{python}
+```{python, eval=FALSE}
 #import dltmle
 #import numpy as np
+#import pandas as pd
 ```
 
-```{python}
-#W, L, A, C, Y = dltmle.example_dgp(np.random.default_rng(0), 1000, 10)
+```{python, eval=FALSE}
+# data = pd.read_csv("dgps/data_ltmle.csv", na_values=[0])
+# data = data.fillna(0)
+# 
+# W_df = data[[col for col in data.columns if col.startswith("W")]]
+# L_df = data[[col for col in data.columns if col.startswith("L")]]
+# A_df = data[[col for col in data.columns if col.startswith("A")]]
+# C_df = data[[col for col in data.columns if col.startswith("C")]]
+# Y_df = data[[col for col in data.columns if col.startswith("Y")]]
+# 
+# W = W_df.to_numpy(dtype=np.float32, copy=True)
+# L = L_df.to_numpy(dtype=np.float32, copy=True)[..., np.newaxis]
+# A = A_df.to_numpy(dtype=np.int64, copy=True)[..., np.newaxis]
+# C = C_df.to_numpy(dtype=np.int64, copy=True)[..., np.newaxis]
+# Y = Y_df.to_numpy(dtype=np.float32, copy=True)[..., np.newaxis]
 ```
 
-```{python}
+```{python, eval=FALSE}
 # hparams_candidates = {
 #     'dim_emb': [8, 16],
 #     'dim_emb_time': [4],
@@ -30,11 +44,11 @@ First, let's load the required packages. The python package `dltmle` implements 
 # }
 ```
 
-```{python}
-# hparams = dltmle.tune(0, hparams_candidates, W, L, A, C, Y, n_trials=5)
+```{python, eval=FALSE}
+# hparams = dltmle.tune(0, hparams_candidates, W, L, A, C, Y, n_trials=1)
 ```
 
-```{python}
+```{python, eval=FALSE}
 # psi_0 = dltmle.fit(0, hparams, W, L, A, C, Y, np.zeros_like(A))
 # psi_1 = dltmle.fit(0, hparams, W, L, A, C, Y, np.ones_like(A))
 

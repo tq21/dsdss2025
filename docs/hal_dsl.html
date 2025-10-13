@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Bulding a diverse super learner library with candidate HAL learners – DahShu Data Science Symposium 2025</title>
+<title>Bulding a Diverse Super Learner Library with Candidate HAL Learners – DahShu Data Science Symposium 2025</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -174,6 +174,9 @@ window.Quarto = {
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#load-required-packages" id="toc-load-required-packages" class="nav-link" data-scroll-target="#load-required-packages">Load required packages</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#hal-super-learner-for-the-treatment-mechanism" id="toc-hal-super-learner-for-the-treatment-mechanism" class="nav-link" data-scroll-target="#hal-super-learner-for-the-treatment-mechanism">HAL super learner for the treatment mechanism</a></li>
+  <li><a href="#hal-super-learner-for-the-outcome-regression" id="toc-hal-super-learner-for-the-outcome-regression" class="nav-link" data-scroll-target="#hal-super-learner-for-the-outcome-regression">HAL super learner for the outcome regression</a></li>
+  <li><a href="#tmle-for-the-ate" id="toc-tmle-for-the-ate" class="nav-link" data-scroll-target="#tmle-for-the-ate">TMLE for the ATE</a></li>
   </ul>
 </nav>
     </div>
@@ -182,7 +185,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Bulding a diverse super learner library with candidate HAL learners</h1>
+<h1 class="title">Bulding a Diverse Super Learner Library with Candidate HAL Learners</h1>
 </div>
 
 
@@ -199,11 +202,13 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level3">
-<h3 class="anchored" data-anchor-id="introduction">Introduction</h3>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This tutorial shows how to build a discrete Super Learner (SL) library comprised of multiple HAL candidates—each with different specifications—and then plug these learners into a TMLE pipeline for ATE estimation. The aim is to create diversity in the HAL library so that cross-validation can select the best specification for each function one tries to estimate.</p>
 </section>
-<section id="load-required-packages" class="level3">
-<h3 class="anchored" data-anchor-id="load-required-packages">Load required packages</h3>
+<section id="load-required-packages" class="level2">
+<h2 class="anchored" data-anchor-id="load-required-packages">Load required packages</h2>
+<p>The <code>sl3</code> R package implements the Super Learner and provides a convenient interface for defining custom learners, including HAL.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(hal9001)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sl3) <span class="co"># super learner</span></span>
@@ -212,20 +217,23 @@ window.Quarto = {
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">sl3.verbose =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">Data</h3>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>Let’s load the example data set:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"dgps/sim_data_dsl.R"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">sim_data</span>(<span class="dv">500</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>W1 <span class="ot">&lt;-</span> data<span class="sc">$</span>W1</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>W2 <span class="ot">&lt;-</span> data<span class="sc">$</span>W2</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>W3 <span class="ot">&lt;-</span> data<span class="sc">$</span>W3</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> data<span class="sc">$</span>A</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> data<span class="sc">$</span>Y</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>folds <span class="ot">&lt;-</span> <span class="fu">make_folds</span>(<span class="at">n =</span> <span class="fu">nrow</span>(data), <span class="at">V =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"dgps/data_dsl.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>W1 <span class="ot">&lt;-</span> data<span class="sc">$</span>W1</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>W2 <span class="ot">&lt;-</span> data<span class="sc">$</span>W2</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>W3 <span class="ot">&lt;-</span> data<span class="sc">$</span>W3</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> data<span class="sc">$</span>A</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> data<span class="sc">$</span>Y</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>folds <span class="ot">&lt;-</span> <span class="fu">make_folds</span>(<span class="at">n =</span> <span class="fu">nrow</span>(data), <span class="at">V =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>First, let’s build a super learner library for the treatment mechanism. We can use the formula interface in <code>hal9001</code> to give HAL specifications.</p>
+</section>
+<section id="hal-super-learner-for-the-treatment-mechanism" class="level2">
+<h2 class="anchored" data-anchor-id="hal-super-learner-for-the-treatment-mechanism">HAL super learner for the treatment mechanism</h2>
+<p>First, let’s build a super learner library for the treatment mechanism <span class="math inline">\(g(1\mid W)=P(A=1\mid W)\)</span>. We can define formula to give HAL specifications, including smoothness order, number of knot-points, and interactions.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>formula_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>)</span>
@@ -255,7 +263,10 @@ window.Quarto = {
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>fit_g <span class="ot">&lt;-</span> g_sl<span class="sc">$</span><span class="fu">train</span>(task_g)</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>g1W <span class="ot">&lt;-</span> fit_g<span class="sc">$</span><span class="fu">predict</span>(task_g)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now, let’s build a super learner library for the outcome regression.</p>
+</section>
+<section id="hal-super-learner-for-the-outcome-regression" class="level2">
+<h2 class="anchored" data-anchor-id="hal-super-learner-for-the-outcome-regression">HAL super learner for the outcome regression</h2>
+<p>Now, let’s build a super learner library for the outcome regression <span class="math inline">\(Q(A,W)=E(Y\mid A,W)\)</span>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>formula_Q_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(.,., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>)</span>
@@ -300,7 +311,10 @@ window.Quarto = {
 <span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>Q1W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q1)</span>
 <span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>Q0W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q0)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Finally, let’s supply the nuisance parameter estimate <code>g1W</code> and initial estimates <code>Q1W</code> and <code>Q0W</code> to the <code>tmle</code> function to compute the targeted estimates.</p>
+</section>
+<section id="tmle-for-the-ate" class="level2">
+<h2 class="anchored" data-anchor-id="tmle-for-the-ate">TMLE for the ATE</h2>
+<p>Finally, let’s supply the nuisance parameter estimate <code>g1W</code> and initial estimates <code>Q1W</code> and <code>Q0W</code> to the <code>tmle()</code> function from the <code>tmle</code> R package to compute the targeted estimates.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>tmle_obj <span class="ot">&lt;-</span> <span class="fu">tmle</span>(<span class="at">W =</span> data[, <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>)],</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">Y =</span> data<span class="sc">$</span>Y,</span>
@@ -314,7 +328,7 @@ window.Quarto = {
 <div class="cell-output cell-output-stdout">
 <pre><code> Initial estimation of Q
      Procedure: user-supplied values
-     Cross-validated R squared :  0.3927 
+     Cross-validated R squared :  0.3917 
 
  Estimation of g (treatment mechanism)
      Procedure: user-supplied values, ensemble
@@ -331,31 +345,24 @@ window.Quarto = {
 
  Marginal Mean under Treatment (EY1)
    Parameter Estimate:  1.7267
-   Estimated Variance:  0.0045834
+   Estimated Variance:  0.0045823
               p-value:  &lt;2e-16
-    95% Conf Interval:  (1.594, 1.8594)
+    95% Conf Interval:  (1.5941, 1.8594)
 
  Marginal Mean under Comparator (EY0)
-   Parameter Estimate:  1.0286
-   Estimated Variance:  0.0063651
+   Parameter Estimate:  1.0287
+   Estimated Variance:  0.0063683
               p-value:  &lt;2e-16
-    95% Conf Interval:  (0.87219, 1.1849)
+    95% Conf Interval:  (0.87233, 1.1851)
 
  Additive Effect
-   Parameter Estimate:  0.69815
-   Estimated Variance:  0.0088058
-              p-value:  1.0077e-13
-    95% Conf Interval:  (0.51423, 0.88207)</code></pre>
+   Parameter Estimate:  0.69801
+   Estimated Variance:  0.0088148
+              p-value:  1.0493e-13
+    95% Conf Interval:  (0.51399, 0.88202)</code></pre>
 </div>
 </div>
-<p>Let’s compare the results to the truth:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> <span class="fu">get_truth</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>truth</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.7226884</code></pre>
-</div>
-</div>
+<p>The true ATE is 0.72 for this DGP.</p>
 
 
 </section>

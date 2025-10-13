@@ -7,13 +7,15 @@ In this example, we demonstrate one possible way to estimate conditional densiti
 
 ## Problem setup
 
-We consider the following problem setup:
+We observe $n$ i.i.d. copies of $O=(X,T)\sim P_0\in\mathcal{M}$, where
 
-Suppose our observed data contains $n$ i.i.d copies of the random variable $O=(X,T)\sim P_0\in\mathcal{M}$, where $X\in\mathbb{R}^d$ is a vector of covariates, $T\in\mathbb{R}$. The statistical model $\mathcal{M}$ is nonparametric.
+- $X \in \mathbb{R}^d$ are covariates;
 
-Our goal is to estimate the conditional density of $T$ given $X$, denoted by $p_0(t\mid X)$.
+- $T \in \mathbb{R}$ is a continuous variable.
 
-### Pooled logistic regression for estimating conditional densities
+Our target is the conditional density $p_0(t \mid X)$.
+
+## Pooled logistic regression for estimating conditional densities
 
 One way to estimate the conditional density of $T$, given $X$ using HAL is through discretizing $T$. This technique has been considered in [Diáz and van der Laan (2011)](https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1356/html). In practice, this can be implemented via a pooled logistic regression. Specifically, consider a set of $k$ bins $\{[t_{j-1},t_j):j=1,\dots,k\}$ formed by $t_0,\dots,t_k$ that partitions $T$. Now, we parameterize the conditional density in terms of discrete hazards for each bin. Let $\tilde{\lambda}_j(X)=P(T\in[t_{j-1},t_j)\mid T\geq t_{j-1},X)$, that is, $\tilde{\lambda}_j$ is the discrete hazard of falling into bin $j$, given having "survived" up to $t_{j-1}$. Under this representation, the conditional density can be expressed as: $$
 p(t\mid X)=\sum_{j=1}^k\left(\tilde{\lambda}_j(X)\prod_{m=1}^{j-1}(1-\tilde{\lambda}_m(X))\right)I\{t\in [t_{j-1},t_j)\}.
@@ -23,32 +25,28 @@ Once we have mapped the discrete conditional density into a conditional density,
 
 TODO: add an example of such a repeated data set.
 
-### Loading required packages
+## Load required packages
 
 We first load the required packages.
-
 ```{r, message=FALSE}
 library(haldensify)
 library(plotly) # for interactive plots
 ```
 
-The \texttt{R} package \texttt{haldensify} implements the nonparametric conditional density estimation via pooled hazards regressions using HAL, as discussed above \citep{hejazi_efficient_2022,hejazi_haldensify_pkg_2022,hejazi_haldensify_joss_2022}. Figure \ref{fig:eg_haldensify} shows the estimated (left pane) and the true (right pane) conditional densities of $A$ at $W_2=0$, over a grid of $W_1$. Note that the zero-order HAL conditional density estimator closely recovers the underlying density of $A$ in this example.
+The \texttt{R} package \texttt{haldensify} implements the nonparametric conditional density estimation via pooled logistic regressions using HAL, as discussed above \citep{hejazi_efficient_2022,hejazi_haldensify_pkg_2022,hejazi_haldensify_joss_2022}.
 
-### Simulating data
+## Data generating process
 
 Let's consider a setting where we are tasked to estimate the generalized propensity score (conditional density of a continuous treatment given covariates). This task could arise in the context of, for example, estimating the effect of a stochastic intervention on a continuous treatment. Suppose researchers collect two baseline covariates $W_1$ and $W_2$, each following a standard normal distribution. Suppose the treatment $A$ is a continuous variable following a normal distribution with a mean given by $1+0.3W_1-1.5W_2$. To introduce some heteroskedasticity, we set its standard deviation to $2+0.3|W1|$.
 
 ```{r, cache=TRUE}
 set.seed(75681)
-source("dgps/sim_data_cde.R")
-n <- 2000
-data <- sim_data_cde(n)
+data <- read.csv("dgps/data_cde.csv")
 ```
 
 ### Use the haldensify function to estimate the conditional density of A given W
 
 The below one liner uses the \texttt{haldensify} function to estimate the conditional density of $A$ given $W=(W_1,W_2)$ using zero-order HAL basis functions. The function automatically selects the number of bins via cross-validation based on the log-likelihood loss.
-
 ```{r, cache=TRUE, warning=FALSE}
 haldensify_fit <- haldensify(A = data$A,
                              W = data$W,
@@ -63,12 +61,14 @@ risk_vs_lambda <- plot(haldensify_fit)
 risk_vs_lambda
 ```
 
-### Plot the estimated conditional density
+## Plot the estimated conditional density
 
 Now, let's visualize the estimated conditional density of $A$ at $W_2=0$ over a grid of $W_1$ values, and compare it with the true conditional density.
 
 ```{r}
 # compute true conditional densities over a grid
+source("dgps/sim_data_cde.R")
+n <- 2000
 W1_vals <- seq(-2, 2, length.out = 20)
 W2_fixed <- 0
 A_vals <- seq(-2, 6, length.out = 30)

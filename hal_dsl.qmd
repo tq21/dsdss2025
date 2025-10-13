@@ -1,12 +1,15 @@
 ---
-title: "Bulding a diverse super learner library with candidate HAL learners"
+title: "Bulding a Diverse Super Learner Library with Candidate HAL Learners"
 format: html
 ---
 
-### Introduction
+## Introduction
 
-### Load required packages
+This tutorial shows how to build a discrete Super Learner (SL) library comprised of multiple HAL candidates—each with different specifications—and then plug these learners into a TMLE pipeline for ATE estimation. The aim is to create diversity in the HAL library so that cross-validation can select the best specification for each function one tries to estimate.
 
+## Load required packages
+
+The `sl3` R package implements the Super Learner and provides a convenient interface for defining custom learners, including HAL.
 ```{r, message=FALSE}
 library(hal9001)
 library(sl3) # super learner
@@ -15,12 +18,12 @@ library(tmle)
 options(sl3.verbose = TRUE)
 ```
 
-### Data
+## Data
 
+Let's load the example data set:
 ```{r}
-source("dgps/sim_data_dsl.R")
 set.seed(123)
-data <- sim_data(500)
+data <- read.csv("dgps/data_dsl.csv")
 W1 <- data$W1
 W2 <- data$W2
 W3 <- data$W3
@@ -29,7 +32,9 @@ Y <- data$Y
 folds <- make_folds(n = nrow(data), V = 5)
 ```
 
-First, let's build a super learner library for the treatment mechanism. We can use the formula interface in `hal9001` to give HAL specifications.
+## HAL super learner for the treatment mechanism
+
+First, let's build a super learner library for the treatment mechanism $g(1\mid W)=P(A=1\mid W)$. We can define formula to give HAL specifications, including smoothness order, number of knot-points, and interactions.
 
 ```{r}
 # specify formulas
@@ -63,8 +68,9 @@ fit_g <- g_sl$train(task_g)
 g1W <- fit_g$predict(task_g)
 ```
 
-Now, let's build a super learner library for the outcome regression.
+## HAL super learner for the outcome regression
 
+Now, let's build a super learner library for the outcome regression $Q(A,W)=E(Y\mid A,W)$.
 ```{r}
 # specify formulas
 formula_Q_1 <- ~ h(., s=0,k=20) + h(.,., s=0,k=20)
@@ -112,7 +118,9 @@ Q1W <- fit_Q$predict(task_Q1)
 Q0W <- fit_Q$predict(task_Q0)
 ```
 
-Finally, let's supply the nuisance parameter estimate `g1W` and initial estimates `Q1W` and `Q0W` to the `tmle` function to compute the targeted estimates.
+## TMLE for the ATE
+
+Finally, let's supply the nuisance parameter estimate `g1W` and initial estimates `Q1W` and `Q0W` to the `tmle()` function from the `tmle` R package to compute the targeted estimates.
 
 ```{r}
 tmle_obj <- tmle(W = data[, c("W1", "W2", "W3")],
@@ -126,9 +134,4 @@ tmle_obj <- tmle(W = data[, c("W1", "W2", "W3")],
 summary(tmle_obj)
 ```
 
-Let's compare the results to the truth:
-
-```{r, cache=TRUE}
-truth <- get_truth()
-truth
-```
+The true ATE is 0.72 for this DGP. 

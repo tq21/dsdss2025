@@ -1,27 +1,37 @@
 ---
-title: "Estimating CATE using HAL"
+title: "Estimating Conditional Average Treatment Effect using HAL"
 format: html
 ---
 
-In this example, we demonstrate one way to estimate the conditional average treatment effect (CATE) function using HAL.
+## Introduction
+
+In this tutorial, we demonstrate how to estimate the conditional average treatment effect (CATE) function using HAL.
 
 ## Problem setup
 
-We consider the following problem setup:
+We consider the following setup. The observed data consist of $n$ i.i.d. copies of $$
+O=(W,A,Y)\sim P_0\in\mathcal{M},
+$$ where
 
-Suppose our observed data contains $n$ i.i.d copies of the random variable $O=(W,A,Y)\sim P_0\in\mathcal{M}$, where $W\in\mathbb{R}^d$ is a vector of baseline covariates, $A\in\{0,1\}$ is a binary treatment, and $Y\in\mathbb{R}$ is the outcome of interest. The statistical model $\mathcal{M}$ is nonparametric.
+-   $W \in \mathbb{R}^d$ are baseline covariates,
 
-Our goal is to estimate the CATE function $\tau_0=E_0(Y\mid A=1,W)-E_0(Y\mid A=0,W)$.
+-   $A \in \{0,1\}$ is a binary treatment indicator, and
+
+-   $Y \in \mathbb{R}$ is an outcome of interest.
+
+The statistical model $\mathcal{M}$ is nonparametric.
+
+Our parameter of interest is the CATE function: $$
+\tau_0(W)=E_0(Y\mid A=1,W)-E_0(Y\mid A=0,W),
+$$ which represents the expected effect of the treatment for an individual with covariates $W$.
 
 In this example, we use the R-loss $L_{m_0,g_0}(\tau)$ indexed by two nuisance parameters $m$ and $g$ for learning CATE: $$
 L_{m,g}(\tau)=\left( Y-m(W)-(A-g(1\mid W))\tau\right)^2,
 $$ where $$
 m(W)=E(Y\mid W)\quad\text{and}\quad g(1\mid W)=P(A=1\mid W).
-$$
+$$ This loss function is double robust in the sense that we have $\tau_0=\arg\min_{\tau}P_0 L_{m,g}(\tau)$ if either $m=m_0$ or $g=g_0$.
 
-This loss function is double robust in the sense that we have $\tau_0=\arg\min_{\tau}P_0 L_{m,g}(\tau)$ if either $m=m_0$ or $g=g_0$.
-
-### Loading required packages
+## Load required packages
 
 We first load the required packages.
 
@@ -31,31 +41,33 @@ library(glmnet)
 library(plotly) # for interactive plots
 ```
 
-### Simulating data
+## Data generating process
 
-We simulate data from the following data generating mechanism: - $W=(W_1,W_2,W_3)\sim \text{Uniform}(-1,1)$;\
-- $A\sim \text{Bernoulli}(\text{expit}(-0.25W_1+W_2))$;\
-- $Y\sim N(\mu(A,W),1)$, where $\mu(A,W)=-0.5+W_1+0.5W_2+0.3W_3+A[0.5W_1+\sin(2\pi W_2)]$.
+We simulate data from the following data generating process:
+
+-   $W=(W_1,W_2,W_3)\sim \text{Uniform}(-1,1)$;
+
+-   $A\sim \text{Bernoulli}(\text{expit}(-0.25W_1+W_2))$;
+
+-   $Y\sim N(\mu(A,W),1)$, where $\mu(A,W)=-0.5+W_1+0.5W_2+0.3W_3+A[0.5W_1+\sin(2\pi W_2)]$.
 
 ```{r}
-source("dgps/sim_data_cate.R")
 set.seed(1234)
-n <- 2000
-data <- sim_data_cate(n)
+data <- read.csv("dgps/data_cate.csv")
 W <- data[, grep("W", colnames(data))]
 A <- data$A
 Y <- data$Y
 ```
 
-### Use HAL to estimate nuisance functions
+## Step 1: Estimate nuisance functions using HAL
 
-First, we use HAL to estimate the nuisance function $m(W)=E(Y\mid W)$:
+First, we use HAL to estimate the nuisance function $m(W)=E(Y\mid W)$. In this tutorial, we will try manually enumerate the list of HAL basis functions, compute the HAL design matrix, and then fit the LASSO. Of course, one could also call the `fit_hal()` function directly.
 
 ```{r, cache=TRUE}
 # enumerate basis list
 basis_list <- enumerate_basis(x = as.matrix(W),
-                              max_degree = 2,
-                              smoothness_orders = 0)
+                              max_degree = 2L,
+                              smoothness_orders = 0L)
 
 # make HAL design matrix
 phi_W <- make_design_matrix(X = as.matrix(W), blist = basis_list)
@@ -65,7 +77,8 @@ m_fit <- cv.glmnet(x = phi_W,
                    y = Y,
                    family = "gaussian", 
                    alpha = 1)
-m <- as.numeric(predict(m_fit, newx = phi_W, s = "lambda.min", type = "response"))
+m <- as.numeric(predict(m_fit, newx = phi_W, s = "lambda.min", 
+                        type = "response"))
 ```
 
 Next, we estimate the other nuisance function $g(1\mid W)=P(A=1\mid W)$:
@@ -76,10 +89,17 @@ g_fit <- cv.glmnet(x = phi_W,
                    y = A,
                    family = "binomial", 
                    alpha = 1)
-g <- as.numeric(predict(g_fit, newx = phi_W, s = "lambda.min", type = "response"))
+g <- as.numeric(predict(g_fit, newx = phi_W, s = "lambda.min", 
+                        type = "response"))
 ```
 
-### Estimate the CATE under the R-loss
+## Step 2: Estimate the CATE under the R-loss
+
+Recall that our loss function is: $$
+L_{m,g}(\tau)=\left( Y-m(W)-(A-g(1\mid W))\tau\right)^2,
+$$ which can also be expressed as: $$
+L_{m,g}(\tau)=(A-g(1\mid W))^2\left(\frac{Y-m(W)}{A-g(1\mid W)}-\tau\right)^2.
+$$ This suggests a simple way to estimate $\tau_0$ via a weighted regression of the pseudo-outcome $(Y-m(W))/(A-g(1\mid W))$ on basis functions of $W$, with weights given by $(A-g(1\mid W))^2$.
 
 ```{r, cache=TRUE}
 pseudo_outcome <- (Y-m)/(A-g)
@@ -93,7 +113,7 @@ tau_fit <- cv.glmnet(x = phi_W,
 tau <- as.numeric(predict(tau_fit, newx = phi_W, s = "lambda.min", type = "response"))
 ```
 
-### Plot the estimated CATE function
+## Plot the estimated CATE function
 
 Now, let's plot a snapshot of the estimated CATE function as a function of $W_1$ and $W_2$, integrating out $W_3$, and compare it with the true CATE function.
 
@@ -168,3 +188,7 @@ plt_true <- plot_ly(x = W1_vals, y = W2_vals, z = true_cate_mat,
 plt_true
 ```
 :::
+
+## References
+
+Nie, Xinkun, and Stefan Wager. "Quasi-oracle estimation of heterogeneous treatment effects." *Biometrika* 108.2 (2021): 299-319. [\[Link\]](https://arxiv.org/abs/1712.04912)
