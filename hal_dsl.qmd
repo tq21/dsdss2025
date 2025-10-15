@@ -1,6 +1,7 @@
 ---
 title: "Bulding a Diverse Super Learner Library with Candidate HAL Learners"
 format: html
+author: "Sky Qiu"
 ---
 
 ## Introduction
@@ -10,6 +11,7 @@ This tutorial shows how to build a discrete Super Learner (SL) library comprised
 ## Load required packages
 
 The `sl3` R package implements the Super Learner and provides a convenient interface for defining custom learners, including HAL.
+
 ```{r, message=FALSE}
 library(hal9001)
 library(sl3) # super learner
@@ -21,15 +23,17 @@ options(sl3.verbose = TRUE)
 ## Data
 
 Let's load the example data set:
+
 ```{r}
 set.seed(123)
-data <- read.csv("dgps/data_dsl.csv")
+data <- read.csv("data/data_dsl.csv")
 W1 <- data$W1
 W2 <- data$W2
 W3 <- data$W3
 A <- data$A
 Y <- data$Y
 folds <- make_folds(n = nrow(data), V = 5)
+head(data)
 ```
 
 ## HAL super learner for the treatment mechanism
@@ -65,12 +69,13 @@ task_g <- sl3_Task$new(data = data,
 
 # fit the treatment mechanism and obtain predictions
 fit_g <- g_sl$train(task_g)
-g1W <- fit_g$predict(task_g)
+g1W <- fit_g$predict(task_g) # P(A=1|W)
 ```
 
 ## HAL super learner for the outcome regression
 
 Now, let's build a super learner library for the outcome regression $Q(A,W)=E(Y\mid A,W)$.
+
 ```{r}
 # specify formulas
 formula_Q_1 <- ~ h(., s=0,k=20) + h(.,., s=0,k=20)
@@ -112,10 +117,11 @@ task_Q0 <- sl3_Task$new(data = data_A0,
                         folds = folds)
 
 # fit the outcome regression and obtain predictions
-fit_Q <- Q_sl$train(task_Q)
-QAW <- fit_Q$predict(task_Q)
-Q1W <- fit_Q$predict(task_Q1)
-Q0W <- fit_Q$predict(task_Q0)
+fit_Q <- Q_sl$train(task_Q) 
+QAW <- fit_Q$predict(task_Q)  # E(Y|A,W)
+Q1W <- fit_Q$predict(task_Q1) # E(Y|A=1,W)
+Q0W <- fit_Q$predict(task_Q0) # E(Y|A=0,W)
+mean(Q1W-Q0W)
 ```
 
 ## TMLE for the ATE
@@ -134,4 +140,4 @@ tmle_obj <- tmle(W = data[, c("W1", "W2", "W3")],
 summary(tmle_obj)
 ```
 
-The true ATE is 0.72 for this DGP. 
+The true ATE is 0.72 for this DGP.

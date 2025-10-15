@@ -13,7 +13,7 @@ import pandas as pd
 
 ```{python}
 #| eval: false
-data = pd.read_csv("dgps/data_ltmle.csv")
+data = pd.read_csv("data/data_ltmle.csv")
 data = data.fillna(0)
 cols_to_flip = [col for col in data.columns if col.startswith('C')]
 data[cols_to_flip] = 1 - data[cols_to_flip]

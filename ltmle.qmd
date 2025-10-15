@@ -22,6 +22,7 @@ library(purrr)
 We will use a synthetic data included in the `dgps` folder that mimics a longitudinal study with $K=4$ time points. The data contains 5000 patients.
 
 Let's first inspect the example data:
+
 ```{r}
 data <- read.csv("data/data_ltmle.csv")
 C_cols <- paste0("C", 1:4)
@@ -31,15 +32,11 @@ walk(C_cols, function(.x) {
 head(data)
 ```
 
-In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The observed data structure is as follows:
-$$
+In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The observed data structure is as follows: $$
 O=(W=(W_1,W_2),L_1,A_1,C_1,Y_1,\dots,L_4,A_4,C_4,Y_4)\sim P_0\in\mathcal{M}.
-$$
-The assumed temporal ordering of the nodes is: 
-$$
+$$ The assumed temporal ordering of the nodes is: $$
 L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
-$$ 
-This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
+$$ This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
 
 We assume that the physician's treatment decision at each visit depends only on the baseline covariates and the patient's current and most recent blood pressure readings. The censoring variable $(C_t)$ indicates whether the patient was lost to follow-up after visit $t$.
 
@@ -54,15 +51,12 @@ Ynodes <- paste0("Y", 1:K)
 
 ## Estimating the causal contrasts of two static treatment regimes using ltmle
 
-Now, suppose we are interested in estimating the mean counterfactual outcome at the last time point (i.e., $Y_4$) if everyone had received treatment at all time points (i.e., $A_1=A_2=A_3=A_4=1$), compared to if everyone had received control at all time points (i.e., $A_1=A_2=A_3=A_4=0$). Define $g^{\star,1}$ as the static treatment regime that assigns treatment at all time points with probability 1, and $g^{\star,0}$ as the static treatment regime that assigns control at all time points with probability 1. Then, our target estimand is given by: 
-$$
+Now, suppose we are interested in estimating the mean counterfactual outcome at the last time point (i.e., $Y_4$) if everyone had received treatment at all time points (i.e., $A_1=A_2=A_3=A_4=1$), compared to if everyone had received control at all time points (i.e., $A_1=A_2=A_3=A_4=0$). Define $g^{\star,1}$ as the static treatment regime that assigns treatment at all time points with probability 1, and $g^{\star,0}$ as the static treatment regime that assigns control at all time points with probability 1. Then, our target estimand is given by: $$
 E[Y_4^{g^{\star,1}}-Y_4^{g^{\star,0}}].
-$$
-Under standard causal assumptions (sequential randomization and positivity), the target estimand is identified by the G-computation formula as the mean difference in $Y_4$ under the two post-intervention distributions:
-$$
+$$ Under standard causal assumptions (sequential randomization and positivity), the target estimand is identified by the G-computation formula as the mean difference in $Y_4$ under the two post-intervention distributions: $$
 E_{P_{Q,g^{\star,1}}}[Y_4]-E_{P_{Q,g^{\star,0}}}[Y_4].
-$$
-Let's estimate this target using the `ltmle()` function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates $(W_1,W_2)$, the most recent $(L_{t-1})$ and the current $(L_t)$ time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the `gform` argument in `ltmle()`:
+$$ Let's estimate this target using the `ltmle()` function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates $(W_1,W_2)$, the most recent $(L_{t-1})$ and the current $(L_t)$ time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the `gform` argument in `ltmle()`:
+
 ```{r}
 # encode knowledge on conditional independence
 gform <- c(
@@ -108,6 +102,7 @@ The true estimand of this DGP is 0.34, which is indeed close to our estimate.
 ## Estimating the effect of a static treatment regime using DeepLTMLE
 
 First, let's load the required packages. The python package `dltmle` implements the DeepLTMLE.
+
 ```{python}
 #| eval: false
 import dltmle

@@ -37,8 +37,7 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 3.30pm-3.40pm   | Coffee/Tea break, Q&A                                                                                                   |                                                                                                                                                                            |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 3.40pm-4.40pm   | L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE                                                             | -   Estimating effect of counterfactual treatment regimes in longitudinal data with `ltmle` [\[code example\]](ltmle.qmd)                                                  |
-|                 |                                                                                                                         | -   DeepLTMLE example \[TODO\]                                                                                                                                             |
+| 3.40pm-4.40pm   | L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE                                                             | -   Estimating effect of counterfactual treatment regimes in longitudinal data with `ltmle` and `dltmle` [\[code example\]](ltmle.qmd)                                     |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 4.40pm-5pm      | Closing remarks, Q&A                                                                                                    |                                                                                                                                                                            |
 +-----------------+-------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -52,7 +51,8 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 ```{r, eval=FALSE}
 # install CRAN packages
 cran_pkgs <- c("hal9001", "glmnet", "plotly", "haldensify", "origami", "tmle",
-               "MASS", "ggplot2", "dbarts", "xgboost", "ltmle")
+               "MASS", "ggplot2", "dbarts", "xgboost", "ltmle", "data.table",
+               "DT", "plotly", "purrr")
 missing_cran <- cran_pkgs[!(cran_pkgs %in% installed.packages()[, "Package"])]
 if (length(missing_cran) > 0) {
   install.packages(missing_cran)

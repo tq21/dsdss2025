@@ -1,6 +1,7 @@
 ---
 title: "Estimating Conditional Average Treatment Effect using HAL"
 format: html
+author: "Sky Qiu"
 ---
 
 ## Introduction
@@ -53,7 +54,7 @@ We simulate data from the following data generating process:
 
 ```{r}
 set.seed(1234)
-data <- read.csv("dgps/data_cate.csv")
+data <- read.csv("data/data_cate.csv")
 W <- data[, grep("W", colnames(data))]
 A <- data$A
 Y <- data$Y

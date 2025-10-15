@@ -1,6 +1,7 @@
 ---
 title: "Introduction to hal9001 R package"
 format: html
+author: "Sky Qiu"
 ---
 
 ## Introduction
@@ -20,7 +21,7 @@ library(hal9001)
 We will use a small synthetic dataset included in this tutorial's data folder.
 
 ```{r}
-load("dgps/hal_intro.rda")
+load("data/hal_intro.rda")
 ```
 
 The dataset includes:
