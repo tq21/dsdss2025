@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Sky Qiu and Toru Shirakawa">
 
 <title>Estimating Effect of Counterfactual Treatment Regimes in Longitudinal Data with LTMLE – DahShu Data Science Symposium 2025</title>
 <style>
@@ -173,7 +174,9 @@ window.Quarto = {
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#loading-required-packages" id="toc-loading-required-packages" class="nav-link" data-scroll-target="#loading-required-packages">Loading required packages</a></li>
-  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#data-and-statistical-model" id="toc-data-and-statistical-model" class="nav-link" data-scroll-target="#data-and-statistical-model">Data and statistical model</a></li>
+  <li><a href="#estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle" id="toc-estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle" class="nav-link" data-scroll-target="#estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle">Estimating the causal contrasts of two static treatment regimes using ltmle</a></li>
+  <li><a href="#estimating-the-effect-of-a-static-treatment-regime-using-deepltmle" id="toc-estimating-the-effect-of-a-static-treatment-regime-using-deepltmle" class="nav-link" data-scroll-target="#estimating-the-effect-of-a-static-treatment-regime-using-deepltmle">Estimating the effect of a static treatment regime using DeepLTMLE</a></li>
   </ul>
 </nav>
     </div>
@@ -189,6 +192,12 @@ window.Quarto = {
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Sky Qiu and Toru Shirakawa </p>
+          </div>
+  </div>
     
   
     
@@ -207,37 +216,44 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="loading-required-packages">Loading required packages</h2>
 <p>The <code>ltmle</code> R package implements the longitudinal sequential-regression based TMLE. It supports evaluations of static or dynamic treatment regimes. The package is available on CRAN.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ltmle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ltmle)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="data" class="level2">
-<h2 class="anchored" data-anchor-id="data">Data</h2>
-<p>In this coding example, we will use a synthetic data included in the <code>dgps</code> folder that mimics a longitudinal study with <span class="math inline">\(K=4\)</span> time points. The data contains 5000 patients.</p>
+<section id="data-and-statistical-model" class="level2">
+<h2 class="anchored" data-anchor-id="data-and-statistical-model">Data and statistical model</h2>
+<p>We will use a synthetic data included in the <code>dgps</code> folder that mimics a longitudinal study with <span class="math inline">\(K=4\)</span> time points. The data contains 5000 patients.</p>
 <p>Let’s first inspect the example data:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"dgps/data_ltmle.csv"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"data/data_ltmle.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>C_cols <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"C"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">walk</span>(C_cols, <span class="cf">function</span>(.x) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  data[[.x]] <span class="ot">&lt;&lt;-</span> <span class="fu">BinaryToCensoring</span>(<span class="at">is.uncensored =</span> data[[.x]])</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>           W1 W2         L1 A1 C1 Y1         L2 A2 C2 Y2        L3 A3 C3 Y3
-1 -0.56047565  0 -1.5571097  0  1  0 -2.2444741  0  1  0 -1.471409  0  1  0
-2 -0.23017749  0 -0.2616424  1  1  0  0.2115774  0  1  0  0.912274  0  1  0
-3  1.55870831  0 -0.1587545  1  1  0  2.2445080  1  1  0  1.780963  1  1  1
-4  0.07050839  1  0.6537786  0  1  0  2.6829173  0  0 NA        NA NA NA NA
-5  0.12928774  1  0.8111676  0  1  1 -0.4408271  1  1  1  2.263297  1  1  1
-6  1.71506499  1  2.4020889  1  1  0  3.1421296  1  1  1  3.816034  1  0 NA
-          L4 A4 C4 Y4
-1 -3.3924447  1  1  0
-2 -0.5059628  1  1  0
-3  2.8658147  1  0 NA
-4         NA NA NA NA
-5  1.9901538  1  0 NA
-6         NA NA NA NA</code></pre>
+<pre><code>           W1 W2         L1 A1         C1 Y1         L2 A2         C2 Y2
+1 -0.56047565  0 -1.5571097  0 uncensored  0 -2.2444741  0 uncensored  0
+2 -0.23017749  0 -0.2616424  1 uncensored  0  0.2115774  0 uncensored  0
+3  1.55870831  0 -0.1587545  1 uncensored  0  2.2445080  1 uncensored  0
+4  0.07050839  1  0.6537786  0 uncensored  0  2.6829173  0   censored NA
+5  0.12928774  1  0.8111676  0 uncensored  1 -0.4408271  1 uncensored  1
+6  1.71506499  1  2.4020889  1 uncensored  0  3.1421296  1 uncensored  1
+         L3 A3         C3 Y3         L4 A4         C4 Y4
+1 -1.471409  0 uncensored  0 -3.3924447  1 uncensored  0
+2  0.912274  0 uncensored  0 -0.5059628  1 uncensored  0
+3  1.780963  1 uncensored  1  2.8658147  1   censored NA
+4        NA NA       &lt;NA&gt; NA         NA NA       &lt;NA&gt; NA
+5  2.263297  1 uncensored  1  1.9901538  1   censored NA
+6  3.816034  1   censored NA         NA NA       &lt;NA&gt; NA</code></pre>
 </div>
 </div>
-<p>In the example data, we have four time points. At each time point <span class="math inline">\(t\)</span>, we observe a continuous time-varying covariate <span class="math inline">\(L_t\)</span>, a binary treatment variable <span class="math inline">\(A_t\)</span>, a binary censoring indicator <span class="math inline">\(C_t\)</span>, and a binary outcome variable <span class="math inline">\(Y_t\)</span>. In addition, there are two baseline covariates, <span class="math inline">\(W_1\)</span> and <span class="math inline">\(W_2\)</span>. The assumed temporal ordering of the nodes is: <span class="math display">\[
+<p>In the example data, we have four time points. At each time point <span class="math inline">\(t\)</span>, we observe a continuous time-varying covariate <span class="math inline">\(L_t\)</span>, a binary treatment variable <span class="math inline">\(A_t\)</span>, a binary censoring indicator <span class="math inline">\(C_t\)</span>, and a binary outcome variable <span class="math inline">\(Y_t\)</span>. In addition, there are two baseline covariates, <span class="math inline">\(W_1\)</span> and <span class="math inline">\(W_2\)</span>. The observed data structure is as follows: <span class="math display">\[
+O=(W=(W_1,W_2),L_1,A_1,C_1,Y_1,\dots,L_4,A_4,C_4,Y_4)\sim P_0\in\mathcal{M}.
+\]</span> The assumed temporal ordering of the nodes is: <span class="math display">\[
 L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
-\]</span> This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient’s blood pressure is first measured <span class="math inline">\((L_t)\)</span>, after which the clinician decides whether to intensify diabetes treatment <span class="math inline">\((A_t)\)</span>. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control (e.g., HbA1c &lt; 7%) is achieved <span class="math inline">\((Y_t)\)</span>. The two baseline covariates include the patient’s age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease <span class="math inline">\((W_2)\)</span>.</p>
-<p>We assume that the physician’s treatment decision at each visit depends only on the baseline covariates and the patient’s current and most recent blood pressure readings, reflecting realistic clinical decision-making. The censoring variable <span class="math inline">\((C_t)\)</span> indicates whether the patient was lost to follow-up after visit <span class="math inline">\(t\)</span>.</p>
+\]</span> This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient’s blood pressure is first measured <span class="math inline">\((L_t)\)</span>, after which the clinician decides whether to intensify diabetes treatment <span class="math inline">\((A_t)\)</span>. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control is achieved <span class="math inline">\((Y_t)\)</span>. The two baseline covariates include the patient’s age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease <span class="math inline">\((W_2)\)</span>.</p>
+<p>We assume that the physician’s treatment decision at each visit depends only on the baseline covariates and the patient’s current and most recent blood pressure readings. The censoring variable <span class="math inline">\((C_t)\)</span> indicates whether the patient was lost to follow-up after visit <span class="math inline">\(t\)</span>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define nodes</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">4</span></span>
@@ -246,10 +262,14 @@ L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>Lnodes <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"L"</span>, <span class="dv">1</span><span class="sc">:</span>K)</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>Ynodes <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"Y"</span>, <span class="dv">1</span><span class="sc">:</span>K)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now, suppose we are interested in estimating the mean outcome at the last time point (i.e., <code>Y4</code>) if everyone had received treatment at all time points (i.e., <code>A1=A2=A3=A4=1</code>), compared to if everyone had received control at all time points (i.e., <code>A1=A2=A3=A4=0</code>). That is, our target estimand is given by: <span class="math display">\[
-E[Y_4^{\bar{A}=(1,1,1,1)} - Y_4^{\bar{A}=(0,0,0,0)}].
-\]</span></p>
-<p>Let’s estimate this target using the <code>ltmle()</code> function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates <span class="math inline">\((W_1,W_2)\)</span>, the most recent <span class="math inline">\((L_{t-1})\)</span> and the current <span class="math inline">\((L_t)\)</span> time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the <code>gform</code> argument in <code>ltmle()</code>:</p>
+</section>
+<section id="estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle" class="level2">
+<h2 class="anchored" data-anchor-id="estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle">Estimating the causal contrasts of two static treatment regimes using ltmle</h2>
+<p>Now, suppose we are interested in estimating the mean counterfactual outcome at the last time point (i.e., <span class="math inline">\(Y_4\)</span>) if everyone had received treatment at all time points (i.e., <span class="math inline">\(A_1=A_2=A_3=A_4=1\)</span>), compared to if everyone had received control at all time points (i.e., <span class="math inline">\(A_1=A_2=A_3=A_4=0\)</span>). Define <span class="math inline">\(g^{\star,1}\)</span> as the static treatment regime that assigns treatment at all time points with probability 1, and <span class="math inline">\(g^{\star,0}\)</span> as the static treatment regime that assigns control at all time points with probability 1. Then, our target estimand is given by: <span class="math display">\[
+E[Y_4^{g^{\star,1}}-Y_4^{g^{\star,0}}].
+\]</span> Under standard causal assumptions (sequential randomization and positivity), the target estimand is identified by the G-computation formula as the mean difference in <span class="math inline">\(Y_4\)</span> under the two post-intervention distributions: <span class="math display">\[
+E_{P_{Q,g^{\star,1}}}[Y_4]-E_{P_{Q,g^{\star,0}}}[Y_4].
+\]</span> Let’s estimate this target using the <code>ltmle()</code> function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates <span class="math inline">\((W_1,W_2)\)</span>, the most recent <span class="math inline">\((L_{t-1})\)</span> and the current <span class="math inline">\((L_t)\)</span> time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the <code>gform</code> argument in <code>ltmle()</code>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># encode knowledge on conditional independence</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>gform <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
@@ -263,7 +283,7 @@ E[Y_4^{\bar{A}=(1,1,1,1)} - Y_4^{\bar{A}=(0,0,0,0)}].
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">C4 =</span> <span class="st">"C4 ~ W1 + W2 + L1 + A1 + Y1 + L2 + A2 + Y2 + L3 + A3 + Y3 + L4 + A4"</span></span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: <code>A1=A2=A3=A4=1</code> and <code>A1=A2=A3=A4=0</code>:</p>
+<p>Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: <span class="math inline">\(A_1=A_2=A_3=A_4=1\)</span> and <span class="math inline">\(A_1=A_2=A_3=A_4=0\)</span>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>abar <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">rep</span>(<span class="dv">1</span>, K), <span class="fu">rep</span>(<span class="dv">0</span>, K))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>abar</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -359,6 +379,63 @@ Odds Ratio:
               p-value:  2.0991e-05 
     95% Conf Interval: (2.0168, 6.6867) </code></pre>
 </div>
+</div>
+<p>The true estimand of this DGP is 0.34, which is indeed close to our estimate.</p>
+</section>
+<section id="estimating-the-effect-of-a-static-treatment-regime-using-deepltmle" class="level2">
+<h2 class="anchored" data-anchor-id="estimating-the-effect-of-a-static-treatment-regime-using-deepltmle">Estimating the effect of a static treatment regime using DeepLTMLE</h2>
+<p>First, let’s load the required packages. The python package <code>dltmle</code> implements the DeepLTMLE.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> dltmle</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pd.read_csv(<span class="st">"data/data_ltmle.csv"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> data.fillna(<span class="dv">0</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>cols_to_flip <span class="op">=</span> [col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">'C'</span>)]</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>data[cols_to_flip] <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> data[cols_to_flip]</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>W_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"W"</span>)]]</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>L_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"L"</span>)]]</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>A_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"A"</span>)]]</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>C_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"C"</span>)]]</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>Y_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"Y"</span>)]]</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>W <span class="op">=</span> W_df.to_numpy(dtype<span class="op">=</span>np.float32, copy<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> L_df.to_numpy(dtype<span class="op">=</span>np.float32, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> A_df.to_numpy(dtype<span class="op">=</span>np.int64, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> C_df.to_numpy(dtype<span class="op">=</span>np.int64, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> Y_df.to_numpy(dtype<span class="op">=</span>np.float32, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>hparams_candidates <span class="op">=</span> {</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb'</span>: [<span class="dv">8</span>, <span class="dv">16</span>],</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb_time'</span>: [<span class="dv">4</span>, <span class="dv">8</span>],</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb_type'</span>: [<span class="dv">4</span>, <span class="dv">8</span>],</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'hidden_size'</span>: [<span class="dv">8</span>, <span class="dv">16</span>, <span class="dv">32</span>],</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'num_layers'</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'nhead'</span>: [<span class="dv">2</span>, <span class="dv">4</span>],</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dropout'</span>: [<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>],</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'learning_rate'</span>: [<span class="fl">1e-3</span>, <span class="fl">5e-4</span>, <span class="fl">1e-4</span>, <span class="fl">5e-5</span>],</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'alpha'</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="dv">1</span>],</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'beta'</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="dv">1</span>],</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'max_epochs'</span>: [<span class="dv">100</span>],</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'batch_size'</span>: [<span class="dv">64</span>],</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>hparams <span class="op">=</span> dltmle.tune(<span class="dv">0</span>, hparams_candidates, W, L, A, C, Y, n_trials<span class="op">=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>psi_0 <span class="op">=</span> dltmle.fit(<span class="dv">0</span>, hparams, W, L, A, C, Y, np.zeros_like(A))</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>psi_1 <span class="op">=</span> dltmle.fit(<span class="dv">0</span>, hparams, W, L, A, C, Y, np.ones_like(A))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'mean counterfactual outcome under a = 0'</span>, psi_0)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'mean counterfactual outcome under a = 1'</span>, psi_1)</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'ATE (risk difference)'</span>, psi_1 <span class="op">-</span> psi_0)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'risk ratio'</span>, psi_1 <span class="op">/</span> psi_0)</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'odds ratio'</span>, (psi_1 <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> psi_1)) <span class="op">/</span> (psi_0 <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> psi_0)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

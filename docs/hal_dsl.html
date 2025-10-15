@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Sky Qiu">
 
-<title>Bulding a diverse super learner library with candidate HAL learners – DahShu Data Science Symposium 2025</title>
+<title>Bulding a Diverse Super Learner Library with Candidate HAL Learners – DahShu Data Science Symposium 2025</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -174,6 +175,9 @@ window.Quarto = {
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#load-required-packages" id="toc-load-required-packages" class="nav-link" data-scroll-target="#load-required-packages">Load required packages</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#hal-super-learner-for-the-treatment-mechanism" id="toc-hal-super-learner-for-the-treatment-mechanism" class="nav-link" data-scroll-target="#hal-super-learner-for-the-treatment-mechanism">HAL super learner for the treatment mechanism</a></li>
+  <li><a href="#hal-super-learner-for-the-outcome-regression" id="toc-hal-super-learner-for-the-outcome-regression" class="nav-link" data-scroll-target="#hal-super-learner-for-the-outcome-regression">HAL super learner for the outcome regression</a></li>
+  <li><a href="#tmle-for-the-ate" id="toc-tmle-for-the-ate" class="nav-link" data-scroll-target="#tmle-for-the-ate">TMLE for the ATE</a></li>
   </ul>
 </nav>
     </div>
@@ -182,13 +186,19 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Bulding a diverse super learner library with candidate HAL learners</h1>
+<h1 class="title">Bulding a Diverse Super Learner Library with Candidate HAL Learners</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Sky Qiu </p>
+          </div>
+  </div>
     
   
     
@@ -199,11 +209,13 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level3">
-<h3 class="anchored" data-anchor-id="introduction">Introduction</h3>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This tutorial shows how to build a discrete Super Learner (SL) library comprised of multiple HAL candidates—each with different specifications—and then plug these learners into a TMLE pipeline for ATE estimation. The aim is to create diversity in the HAL library so that cross-validation can select the best specification for each function one tries to estimate.</p>
 </section>
-<section id="load-required-packages" class="level3">
-<h3 class="anchored" data-anchor-id="load-required-packages">Load required packages</h3>
+<section id="load-required-packages" class="level2">
+<h2 class="anchored" data-anchor-id="load-required-packages">Load required packages</h2>
+<p>The <code>sl3</code> R package implements the Super Learner and provides a convenient interface for defining custom learners, including HAL.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(hal9001)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sl3) <span class="co"># super learner</span></span>
@@ -212,109 +224,132 @@ window.Quarto = {
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">sl3.verbose =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">Data</h3>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>Let’s load the example data set:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"dgps/sim_data_dsl.R"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">sim_data</span>(<span class="dv">500</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>W1 <span class="ot">&lt;-</span> data<span class="sc">$</span>W1</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>W2 <span class="ot">&lt;-</span> data<span class="sc">$</span>W2</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>W3 <span class="ot">&lt;-</span> data<span class="sc">$</span>W3</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> data<span class="sc">$</span>A</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> data<span class="sc">$</span>Y</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>folds <span class="ot">&lt;-</span> <span class="fu">make_folds</span>(<span class="at">n =</span> <span class="fu">nrow</span>(data), <span class="at">V =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"data/data_dsl.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>W1 <span class="ot">&lt;-</span> data<span class="sc">$</span>W1</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>W2 <span class="ot">&lt;-</span> data<span class="sc">$</span>W2</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>W3 <span class="ot">&lt;-</span> data<span class="sc">$</span>W3</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> data<span class="sc">$</span>A</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> data<span class="sc">$</span>Y</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>folds <span class="ot">&lt;-</span> <span class="fu">make_folds</span>(<span class="at">n =</span> <span class="fu">nrow</span>(data), <span class="at">V =</span> <span class="dv">5</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           W1 W2         W3 A         Y
+1 -0.56047565  0  1.5384302 0 0.3022093
+2 -0.23017749  1 -0.1097103 1 1.3960467
+3  1.55870831  0  0.5114708 1 1.2924846
+4  0.07050839  1  0.2139580 1 2.9539629
+5  0.12928774  1 -0.1861207 1 3.0885005
+6  1.71506499  0 -0.1203938 0 2.8793310</code></pre>
 </div>
-<p>First, let’s build a super learner library for the treatment mechanism. We can use the formula interface in <code>hal9001</code> to give HAL specifications.</p>
+</div>
+</section>
+<section id="hal-super-learner-for-the-treatment-mechanism" class="level2">
+<h2 class="anchored" data-anchor-id="hal-super-learner-for-the-treatment-mechanism">HAL super learner for the treatment mechanism</h2>
+<p>First, let’s build a super learner library for the treatment mechanism <span class="math inline">\(g(1\mid W)=P(A=1\mid W)\)</span>. We can define formula to give HAL specifications, including smoothness order, number of knot-points, and interactions.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>formula_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>formula_2 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span> <span class="fu">h</span>(W1,W2,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>formula_3 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">1</span>) <span class="sc">+</span> <span class="fu">h</span>(W1,W2,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># define candidate HAL learners</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>g_hal_1 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_1)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>g_hal_2 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_2)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>g_hal_3 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_3)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># define discrete SL library</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>g_lib <span class="ot">&lt;-</span> Stack<span class="sc">$</span><span class="fu">new</span>(g_hal_1, g_hal_2, g_hal_3)</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>g_sl <span class="ot">&lt;-</span> Lrnr_sl<span class="sc">$</span><span class="fu">new</span>(<span class="at">learners =</span> g_lib, </span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                    <span class="at">metalearner =</span> Lrnr_cv_selector<span class="sc">$</span><span class="fu">new</span>(loss_loglik_binomial))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>formula_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>formula_2 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span> <span class="fu">h</span>(W1,W2,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>formula_3 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">1</span>) <span class="sc">+</span> <span class="fu">h</span>(W1,W2,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># define candidate HAL learners</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>g_hal_1 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_1)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>g_hal_2 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_2)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>g_hal_3 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_3)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># define discrete SL library</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>g_lib <span class="ot">&lt;-</span> Stack<span class="sc">$</span><span class="fu">new</span>(g_hal_1, g_hal_2, g_hal_3)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>g_sl <span class="ot">&lt;-</span> Lrnr_sl<span class="sc">$</span><span class="fu">new</span>(<span class="at">learners =</span> g_lib, </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                    <span class="at">metalearner =</span> Lrnr_cv_selector<span class="sc">$</span><span class="fu">new</span>(loss_loglik_binomial))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Next, we define a task for fitting the treatment mechanism.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define task for fitting the treatment mechanism</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>task_g <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data, </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome =</span> <span class="st">"A"</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome_type =</span> <span class="st">"binomial"</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">folds =</span> folds)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the treatment mechanism and obtain predictions</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>fit_g <span class="ot">&lt;-</span> g_sl<span class="sc">$</span><span class="fu">train</span>(task_g)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>g1W <span class="ot">&lt;-</span> fit_g<span class="sc">$</span><span class="fu">predict</span>(task_g)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Now, let’s build a super learner library for the outcome regression.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>formula_Q_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(.,., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>formula_Q_2 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">h</span>(A,W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>) <span class="sc">+</span> <span class="fu">h</span>(A,W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>formula_Q_3 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">1</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> </span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">h</span>(A,W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>) <span class="sc">+</span> <span class="fu">h</span>(A,W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define task for fitting the treatment mechanism</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>task_g <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data, </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome =</span> <span class="st">"A"</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome_type =</span> <span class="st">"binomial"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">folds =</span> folds)</span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># define candidate HAL learners</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>Q_hal_1 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_Q_1)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>Q_hal_2 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_Q_2)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>Q_hal_3 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_Q_3)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co"># define discrete SL library</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Q_lib <span class="ot">&lt;-</span> Stack<span class="sc">$</span><span class="fu">new</span>(Q_hal_1, Q_hal_2, Q_hal_3)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>Q_sl <span class="ot">&lt;-</span> Lrnr_sl<span class="sc">$</span><span class="fu">new</span>(<span class="at">learners =</span> Q_lib, </span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">metalearner =</span> Lrnr_cv_selector<span class="sc">$</span><span class="fu">new</span>(loss_squared_error))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the treatment mechanism and obtain predictions</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>fit_g <span class="ot">&lt;-</span> g_sl<span class="sc">$</span><span class="fu">train</span>(task_g)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>g1W <span class="ot">&lt;-</span> fit_g<span class="sc">$</span><span class="fu">predict</span>(task_g) <span class="co"># P(A=1|W)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="hal-super-learner-for-the-outcome-regression" class="level2">
+<h2 class="anchored" data-anchor-id="hal-super-learner-for-the-outcome-regression">HAL super learner for the outcome regression</h2>
+<p>Now, let’s build a super learner library for the outcome regression <span class="math inline">\(Q(A,W)=E(Y\mid A,W)\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>formula_Q_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(.,., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>formula_Q_2 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">h</span>(A,W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>) <span class="sc">+</span> <span class="fu">h</span>(A,W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>formula_Q_3 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">1</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">h</span>(A,W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>) <span class="sc">+</span> <span class="fu">h</span>(A,W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># define candidate HAL learners</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>Q_hal_1 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_Q_1)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>Q_hal_2 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_Q_2)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>Q_hal_3 <span class="ot">&lt;-</span> Lrnr_hal9001<span class="sc">$</span><span class="fu">new</span>(<span class="at">formula =</span> formula_Q_3)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># define discrete SL library</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>Q_lib <span class="ot">&lt;-</span> Stack<span class="sc">$</span><span class="fu">new</span>(Q_hal_1, Q_hal_2, Q_hal_3)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>Q_sl <span class="ot">&lt;-</span> Lrnr_sl<span class="sc">$</span><span class="fu">new</span>(<span class="at">learners =</span> Q_lib, </span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">metalearner =</span> Lrnr_cv_selector<span class="sc">$</span><span class="fu">new</span>(loss_squared_error))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Similarly, we define tasks for fitting the outcome regression. Note that for the outcome regression, we need to create three tasks: one for fitting the observed outcome regression <span class="math inline">\(E(Y\mid A,W)\)</span>, and two counterfactual tasks for <span class="math inline">\(A=1\)</span> and <span class="math inline">\(A=0\)</span> to obtain predictions under each treatment level.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define task for fitting the outcome regression (and counterfactual tasks)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>task_Q <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome =</span> <span class="st">"Y"</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome_type =</span> <span class="st">"continuous"</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">folds =</span> folds)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>data_A1 <span class="ot">&lt;-</span> data; data_A1<span class="sc">$</span>A <span class="ot">&lt;-</span> <span class="dv">1</span>; data_A0 <span class="ot">&lt;-</span> data; data_A0<span class="sc">$</span>A <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>task_Q1 <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data_A1,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome =</span> <span class="st">"Y"</span>,</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome_type =</span> <span class="st">"continuous"</span>,</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                        <span class="at">folds =</span> folds)</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>task_Q0 <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data_A0,</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                        <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome =</span> <span class="st">"Y"</span>,</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome_type =</span> <span class="st">"continuous"</span>,</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                        <span class="at">folds =</span> folds)</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the outcome regression and obtain predictions</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>fit_Q <span class="ot">&lt;-</span> Q_sl<span class="sc">$</span><span class="fu">train</span>(task_Q)</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>QAW <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q)</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>Q1W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q1)</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>Q0W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q0)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define task for fitting the outcome regression (and counterfactual tasks)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>task_Q <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome =</span> <span class="st">"Y"</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">outcome_type =</span> <span class="st">"continuous"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">folds =</span> folds)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>data_A1 <span class="ot">&lt;-</span> data; data_A1<span class="sc">$</span>A <span class="ot">&lt;-</span> <span class="dv">1</span>; data_A0 <span class="ot">&lt;-</span> data; data_A0<span class="sc">$</span>A <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>task_Q1 <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data_A1,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome =</span> <span class="st">"Y"</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome_type =</span> <span class="st">"continuous"</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                        <span class="at">folds =</span> folds)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>task_Q0 <span class="ot">&lt;-</span> sl3_Task<span class="sc">$</span><span class="fu">new</span>(<span class="at">data =</span> data_A0,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                        <span class="at">covariates =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>),</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome =</span> <span class="st">"Y"</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                        <span class="at">outcome_type =</span> <span class="st">"continuous"</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                        <span class="at">folds =</span> folds)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the outcome regression and obtain predictions</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>fit_Q <span class="ot">&lt;-</span> Q_sl<span class="sc">$</span><span class="fu">train</span>(task_Q) </span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>QAW <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q)  <span class="co"># E(Y|A,W)</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>Q1W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q1) <span class="co"># E(Y|A=1,W)</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>Q0W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q0) <span class="co"># E(Y|A=0,W)</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(Q1W<span class="sc">-</span>Q0W)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6879507</code></pre>
 </div>
-<p>Finally, let’s supply the nuisance parameter estimate <code>g1W</code> and initial estimates <code>Q1W</code> and <code>Q0W</code> to the <code>tmle</code> function to compute the targeted estimates.</p>
+</div>
+</section>
+<section id="tmle-for-the-ate" class="level2">
+<h2 class="anchored" data-anchor-id="tmle-for-the-ate">TMLE for the ATE</h2>
+<p>Finally, let’s supply the nuisance parameter estimate <code>g1W</code> and initial estimates <code>Q1W</code> and <code>Q0W</code> to the <code>tmle()</code> function from the <code>tmle</code> R package to compute the targeted estimates.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>tmle_obj <span class="ot">&lt;-</span> <span class="fu">tmle</span>(<span class="at">W =</span> data[, <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>)],</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">Y =</span> data<span class="sc">$</span>Y,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">A =</span> data<span class="sc">$</span>A,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">Q =</span> <span class="fu">as.matrix</span>(<span class="fu">data.frame</span>(<span class="at">Q0W=</span>Q0W, <span class="at">Q1W=</span>Q1W)),</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">g1W =</span> g1W,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">prescreenW.g   =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">evalATT =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tmle_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>tmle_obj <span class="ot">&lt;-</span> <span class="fu">tmle</span>(<span class="at">W =</span> data[, <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>)],</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">Y =</span> data<span class="sc">$</span>Y,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">A =</span> data<span class="sc">$</span>A,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">Q =</span> <span class="fu">as.matrix</span>(<span class="fu">data.frame</span>(<span class="at">Q0W=</span>Q0W, <span class="at">Q1W=</span>Q1W)),</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">g1W =</span> g1W,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">prescreenW.g   =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">evalATT =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tmle_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Initial estimation of Q
      Procedure: user-supplied values
-     Cross-validated R squared :  0.3927 
+     Cross-validated R squared :  0.3917 
 
  Estimation of g (treatment mechanism)
      Procedure: user-supplied values, ensemble
@@ -331,31 +366,24 @@ window.Quarto = {
 
  Marginal Mean under Treatment (EY1)
    Parameter Estimate:  1.7267
-   Estimated Variance:  0.0045834
+   Estimated Variance:  0.0045823
               p-value:  &lt;2e-16
-    95% Conf Interval:  (1.594, 1.8594)
+    95% Conf Interval:  (1.5941, 1.8594)
 
  Marginal Mean under Comparator (EY0)
-   Parameter Estimate:  1.0286
-   Estimated Variance:  0.0063651
+   Parameter Estimate:  1.0287
+   Estimated Variance:  0.0063683
               p-value:  &lt;2e-16
-    95% Conf Interval:  (0.87219, 1.1849)
+    95% Conf Interval:  (0.87233, 1.1851)
 
  Additive Effect
-   Parameter Estimate:  0.69815
-   Estimated Variance:  0.0088058
-              p-value:  1.0077e-13
-    95% Conf Interval:  (0.51423, 0.88207)</code></pre>
+   Parameter Estimate:  0.69801
+   Estimated Variance:  0.0088148
+              p-value:  1.0493e-13
+    95% Conf Interval:  (0.51399, 0.88202)</code></pre>
 </div>
 </div>
-<p>Let’s compare the results to the truth:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> <span class="fu">get_truth</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>truth</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.7226884</code></pre>
-</div>
-</div>
+<p>The true ATE is 0.72 for this DGP.</p>
 
 
 </section>

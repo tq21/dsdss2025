@@ -1,0 +1,147 @@
+---
+title: "Introduction to hal9001 R package"
+format: html
+author: "Sky Qiu"
+---
+
+## Introduction
+
+The materials presented in this tutorial are adapted from the vignette of the [`hal9001`](https://tlverse.org/hal9001/articles/intro_hal9001.html) R package. The goal of this tutorial is to walk through the basic usage of HAL for regression, explore how basis functions are constructed, and demonstrate how one can control the complexity and structure of HAL fits through formulas.
+
+## Required packages
+
+Let's first load the required R packages used throughout this tutorial.
+
+```{r, message=FALSE}
+library(data.table)
+library(DT)
+library(hal9001)
+```
+
+We will use a small synthetic dataset included in this tutorial's data folder.
+
+```{r}
+load("data/hal_intro.rda")
+```
+
+The dataset includes:
+
+-   `x`: the training covariate matrix;
+
+-   `y`: the outcome vector;
+
+-   `test_x`, `test_y`: the corresponding test set used for out-of-sample evaluation.
+
+## Fitting a regression with HAL
+
+We begin by fitting a simple regression using `fit_hal()`:
+
+```{r}
+hal_fit <- fit_hal(X = x, Y = y,
+                   smoothness_orders = 0L,
+                   family = "gaussian")
+hal_fit$times
+```
+
+The `$times` output provides runtime profiling for each step in the HAL fitting procedure. We could see that the `fit_hal()` function runs several steps internally:
+
+1.  Basis enumeration: HAL first constructs a list of basis functions implied by the observed covariate data;
+
+2.  Design matrix evaluation: The set of basis functions is evaluated at the observed data to create a design matrix. For zero-order HAL, the design matrix contains entries of either 0 or 1;
+
+3.  Pruning: Duplicate or near-constant columns (e.g., columns with very few 1's) are removed to reduce computational cost.
+
+4.  Penalized regression fit: A cross-validated LASSO regression is then fitted using the `cv.glmnet()` function from the `glmnet` R package.
+
+Let's examine a summary of the fitted HAL model:
+
+```{r}
+datatable(summary(hal_fit)$table,
+          options = list(pageLength = 10,
+                         lengthMenu = c(5, 10, 25, 50),
+                         dom = "ltip",
+                         autoWidth = TRUE,
+                         scrollX = TRUE),
+          class = "stripe hover order-column",
+          rownames = FALSE)
+```
+
+This table summarizes which basis functions were included in the final HAL fit and their coefficients. For zero-order HAL, the fitted function is a linear combination of indicator basis functions and tensor products of such indicators.
+
+Let's obtain predictions from the HAL fit and compute both training and test mean-squared-errors (MSEs):
+
+```{r}
+mse <- function(preds, y) {
+  mean((preds - y)^2)
+}
+
+# training MSE
+preds_hal <- predict(object = hal_fit, new_data = x)
+mse_hal <- mse(preds = preds_hal, y = y)
+mse_hal
+
+# test MSE
+oob_hal <- predict(object = hal_fit, new_data = test_x)
+oob_hal_mse <- mse(preds = oob_hal, y = test_y)
+oob_hal_mse
+```
+
+## Specifying a HAL formula
+
+Users can gain finer control in specifying HAL fits using the formula interface via `formula_hal()`. This allows one to:
+
+-   Specify the number of knot-points per covariate;
+
+-   Restrict which covariates interact;
+
+-   Set smoothness orders;
+
+-   And optionally impose monotonicity or penalty constraints.
+
+Let's illustrate via a few examples.
+
+We specify a zero-order HAL with one-way basis functions for `X1` and `X2`, each with 2 knot-points:
+
+```{r}
+X <- data.frame(X1 = x[,1], X2 = x[,2], X3 = x[,3])
+formula_1 <- formula_hal(
+  ~ h(X1) + h(X2),
+  X = X, 
+  smoothness_orders = 0L,
+  num_knots = 2L
+)
+```
+
+Inspect the implied basis functions:
+
+```{r}
+formula_1$basis_list
+```
+
+Now let's include two-way interaction terms between `X1` and `X2`. Here, we specify 2 knot-points for X1, 3 for X2, and 2 for the interaction terms:
+
+```{r}
+formula_2 <- formula_hal(
+  ~ h(X1,s=0,k=2) + h(X2,s=0,k=3) + h(X1,X2,s=0,k=2),
+  X = X, 
+  smoothness_orders = 0L, # overwritten by s in h() 
+  num_knots = 10L # overwritten by k in h()
+)
+formula_2$basis_list
+```
+
+Finally, we define a **first-order** HAL with one-way basis functions for `X1`, `X2`, and a two-way interaction for `X2` and `X3`.
+
+```{r}
+formula_3 <- formula_hal(
+  ~ h(X1,s=1,k=2) + h(X2,s=1,k=3) + h(X2,X3,s=1,k=2),
+  X = X, 
+  smoothness_orders = 0L, # overwritten by s in h() 
+  num_knots = 10L # overwritten by k in h()
+)
+formula_3$basis_list
+```
+
+Once a formula is created, it can be supplied directly to `fit_hal()` as an argument. This gives users full control over which basis functions HAL considers, providing a powerful interface to allow incorporation of any existing knowledge on the function to be estimated. This is particularly useful for building interpretable or constrained models (e.g., monotone dose-response functions or functions with known smoothness).
+
+For more advanced topics, including specifying monotonicity constraints and penalty factors, see the extended examples in the vignette for [`hal9001`](https://tlverse.org/hal9001/articles/intro_hal9001.html).

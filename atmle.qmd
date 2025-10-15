@@ -1,6 +1,7 @@
 ---
 title: "Analyzing Hybrid RCTs with Adaptive-TMLE"
 format: html
+author: "Sky Qiu"
 ---
 
 ## Introduction
@@ -68,7 +69,8 @@ options(sl3.verbose = FALSE)
 
 ```{r}
 seed <- 113
-data <- read.csv("dgps/data_atmle.csv")
+data <- read.csv("data/data_atmle.csv")
+head(data)
 ```
 
 ## Candidate estimators
@@ -113,7 +115,6 @@ atmle_res <- atmle(data = data,
                    W = c("W1", "W2", "W3", "W4"), 
                    A = "A",
                    Y = "Y",
-                   controls_only = FALSE,
                    family = "gaussian",
                    theta_method = sl_lib, 
                    Pi_method = sl_lib, 
