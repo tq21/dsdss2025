@@ -87,5 +87,13 @@ sim_data <- function(n,
 get_truth <- function(n_large = 1e7, K = 4) {
   data_A1 <- sim_data(n_large, K = K, a_bar = rep(1, K))
   data_A0 <- sim_data(n_large, K = K, a_bar = rep(0, K))
-  return(mean(data_A1[[paste0("Y", K)]])/mean(data_A0[[paste0("Y", K)]]))
+  mean_A1 <- mean(data_A1[[paste0("Y", K)]])
+  mean_A0 <- mean(data_A0[[paste0("Y", K)]])
+  risk_diff <- mean_A1 - mean_A0
+  risk_ratio <- mean_A1 / mean_A0
+
+  return(list(mean_A1 = mean_A1,
+              mean_A0 = mean_A0,
+              risk_diff = risk_diff,
+              risk_ratio = risk_ratio) )
 }

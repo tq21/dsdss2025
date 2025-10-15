@@ -9,25 +9,29 @@ In this example, we demonstrate one possible way to estimate conditional densiti
 
 We observe $n$ i.i.d. copies of $O=(X,T)\sim P_0\in\mathcal{M}$, where
 
-- $X \in \mathbb{R}^d$ are covariates;
+-   $X \in \mathbb{R}^d$ are covariates;
 
-- $T \in \mathbb{R}$ is a continuous variable.
+-   $T \in \mathbb{R}$ is a continuous variable.
 
 Our target is the conditional density $p_0(t \mid X)$.
 
 ## Pooled logistic regression for estimating conditional densities
 
-One way to estimate the conditional density of $T$, given $X$ using HAL is through discretizing $T$. This technique has been considered in [Diáz and van der Laan (2011)](https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1356/html). In practice, this can be implemented via a pooled logistic regression. Specifically, consider a set of $k$ bins $\{[t_{j-1},t_j):j=1,\dots,k\}$ formed by $t_0,\dots,t_k$ that partitions $T$. Now, we parameterize the conditional density in terms of discrete hazards for each bin. Let $\tilde{\lambda}_j(X)=P(T\in[t_{j-1},t_j)\mid T\geq t_{j-1},X)$, that is, $\tilde{\lambda}_j$ is the discrete hazard of falling into bin $j$, given having "survived" up to $t_{j-1}$. Under this representation, the conditional density can be expressed as: $$
-p(t\mid X)=\sum_{j=1}^k\left(\tilde{\lambda}_j(X)\prod_{m=1}^{j-1}(1-\tilde{\lambda}_m(X))\right)I\{t\in [t_{j-1},t_j)\}.
-$$ For $n$ independent units, the likelihood corresponds to the likelihood of an indicator in a repeated measures data set, where the outcome is an indicator of whether $T_i$ falls within a specific bin, i.e., $T_i\in(t_{\alpha-1},t_\alpha]$. For each subject, observations are repeated as many times as there are bins $[t_{\alpha-1},t_\alpha)$ prior to the bin in which $T_i$ lies in. One could then run a logistic regression with, for example, zero-order HAL basis, on this repeated data set to obtain the estimated bin-level conditional densities. Finally, a piecewise constant conditional density function over $\mathbb{R}$ can be obtained by normalizing each bin-level estimate by the corresponding bin width.
+One way to estimate the conditional density of $T$, given $X$ using HAL is through discretizing $T$. This technique has been considered in [Diáz and van der Laan (2011)](https://www.degruyterbrill.com/document/doi/10.2202/1557-4679.1356/html). In practice, this can be implemented via a pooled logistic regression. Specifically, consider a set of $k$ bins $\{[t_{j-1},t_j):j=1,\dots,k\}$ formed by $t_0,\dots,t_k$ that partitions $T$. Now, we parameterize the conditional density in terms of discrete hazards for each bin. Let $\tilde{\lambda}_j(X)=P(T\in[t_{j-1},t_j)\mid T\geq t_{j-1},X)$, that is, $\tilde{\lambda}_j$ is the discrete hazard of falling into bin $j$, given having "survived" up to $t_{j-1}$. Then, we have that: $$
+P(T\in[t_{j-1},t_j)\mid X)=\tilde{\lambda}_j(X)\prod_{m=1}^{j-1}(1-\tilde{\lambda}_m(X)).
+$$ 
+The conditional density can then be obtained as
+$$
+p(t\mid X)=\sum_{j=1}^k \frac{P(T\in[t_{j-1},t_j)\mid X)}{t_j-t_{j-1}}I(t\in[t_{j-1},t_j)).
+$$
+For $n$ independent units, the likelihood corresponds to the likelihood of an indicator in a repeated measures data set, where the outcome is an indicator of whether $T_i$ falls within a specific bin, i.e., $T_i\in(t_{\alpha-1},t_\alpha]$. For each subject, observations are repeated as many times as there are bins $[t_{\alpha-1},t_\alpha)$ prior to the bin in which $T_i$ lies in. One could then run a logistic regression with, for example, zero-order HAL basis, on this repeated data set to obtain the estimated bin-level conditional densities. Finally, a piecewise constant conditional density function over $\mathbb{R}$ can be obtained by normalizing each bin-level estimate by the corresponding bin width.
 
 Once we have mapped the discrete conditional density into a conditional density, we can use cross-validation based on the log-likelihood loss to select the number of bins $k$.
-
-TODO: add an example of such a repeated data set.
 
 ## Load required packages
 
 We first load the required packages.
+
 ```{r, message=FALSE}
 library(haldensify)
 library(plotly) # for interactive plots
@@ -47,6 +51,7 @@ data <- read.csv("dgps/data_cde.csv")
 ### Use the haldensify function to estimate the conditional density of A given W
 
 The below one liner uses the \texttt{haldensify} function to estimate the conditional density of $A$ given $W=(W_1,W_2)$ using zero-order HAL basis functions. The function automatically selects the number of bins via cross-validation based on the log-likelihood loss.
+
 ```{r, cache=TRUE, warning=FALSE}
 haldensify_fit <- haldensify(A = data$A,
                              W = data$W,

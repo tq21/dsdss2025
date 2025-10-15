@@ -1,6 +1,7 @@
 ---
 title: "Estimating Effect of Counterfactual Treatment Regimes in Longitudinal Data with LTMLE"
 format: html
+author: "Sky Qiu and Toru Shirakawa"
 ---
 
 ## Introduction
@@ -13,24 +14,34 @@ The `ltmle` R package implements the longitudinal sequential-regression based TM
 
 ```{r, message=FALSE}
 library(ltmle)
+library(purrr)
 ```
 
-## Data
+## Data and statistical model
 
-In this coding example, we will use a synthetic data included in the `dgps` folder that mimics a longitudinal study with $K=4$ time points. The data contains 5000 patients.
+We will use a synthetic data included in the `dgps` folder that mimics a longitudinal study with $K=4$ time points. The data contains 5000 patients.
 
 Let's first inspect the example data:
-
 ```{r}
-data <- read.csv("dgps/data_ltmle.csv")
+data <- read.csv("data/data_ltmle.csv")
+C_cols <- paste0("C", 1:4)
+walk(C_cols, function(.x) {
+  data[[.x]] <<- BinaryToCensoring(is.uncensored = data[[.x]])
+})
 head(data)
 ```
 
-In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The assumed temporal ordering of the nodes is: $$
+In the example data, we have four time points. At each time point $t$, we observe a continuous time-varying covariate $L_t$, a binary treatment variable $A_t$, a binary censoring indicator $C_t$, and a binary outcome variable $Y_t$. In addition, there are two baseline covariates, $W_1$ and $W_2$. The observed data structure is as follows:
+$$
+O=(W=(W_1,W_2),L_1,A_1,C_1,Y_1,\dots,L_4,A_4,C_4,Y_4)\sim P_0\in\mathcal{M}.
+$$
+The assumed temporal ordering of the nodes is: 
+$$
 L_t\rightarrow A_t\rightarrow C_t\rightarrow Y_t.
-$$ This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control (e.g., HbA1c \< 7%) is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
+$$ 
+This data structure and time ordering could arise, for instance, in a longitudinal diabetes management program where patients are followed quarterly over one year (four visits in total). At each visit, the patient's blood pressure is first measured $(L_t)$, after which the clinician decides whether to intensify diabetes treatment $(A_t)$. Following the visit, the patient is asked to complete a laboratory test for their HbA1c level, whose result determines whether diabetes control is achieved $(Y_t)$. The two baseline covariates include the patient's age (W1) and an indicator of whether they have a comorbid condition such as cardiovascular disease $(W_2)$.
 
-We assume that the physician's treatment decision at each visit depends only on the baseline covariates and the patient's current and most recent blood pressure readings, reflecting realistic clinical decision-making. The censoring variable $(C_t)$ indicates whether the patient was lost to follow-up after visit $t$.
+We assume that the physician's treatment decision at each visit depends only on the baseline covariates and the patient's current and most recent blood pressure readings. The censoring variable $(C_t)$ indicates whether the patient was lost to follow-up after visit $t$.
 
 ```{r}
 # define nodes
@@ -41,12 +52,17 @@ Lnodes <- paste0("L", 1:K)
 Ynodes <- paste0("Y", 1:K)
 ```
 
-Now, suppose we are interested in estimating the mean outcome at the last time point (i.e., `Y4`) if everyone had received treatment at all time points (i.e., `A1=A2=A3=A4=1`), compared to if everyone had received control at all time points (i.e., `A1=A2=A3=A4=0`). That is, our target estimand is given by: $$
-E[Y_4^{\bar{A}=(1,1,1,1)} - Y_4^{\bar{A}=(0,0,0,0)}].
+## Estimating the causal contrasts of two static treatment regimes using ltmle
+
+Now, suppose we are interested in estimating the mean counterfactual outcome at the last time point (i.e., $Y_4$) if everyone had received treatment at all time points (i.e., $A_1=A_2=A_3=A_4=1$), compared to if everyone had received control at all time points (i.e., $A_1=A_2=A_3=A_4=0$). Define $g^{\star,1}$ as the static treatment regime that assigns treatment at all time points with probability 1, and $g^{\star,0}$ as the static treatment regime that assigns control at all time points with probability 1. Then, our target estimand is given by: 
 $$
-
+E[Y_4^{g^{\star,1}}-Y_4^{g^{\star,0}}].
+$$
+Under standard causal assumptions (sequential randomization and positivity), the target estimand is identified by the G-computation formula as the mean difference in $Y_4$ under the two post-intervention distributions:
+$$
+E_{P_{Q,g^{\star,1}}}[Y_4]-E_{P_{Q,g^{\star,0}}}[Y_4].
+$$
 Let's estimate this target using the `ltmle()` function. First, we need to encode our knowledge on the statistical model. In this case, we do have knowledge on the treatment assignment mechanism at each time point. That is, we know that the doctor only considers baseline covariates $(W_1,W_2)$, the most recent $(L_{t-1})$ and the current $(L_t)$ time-varying covariates when making treatment decisions at a current time-point. We can encode this knowledge using the `gform` argument in `ltmle()`:
-
 ```{r}
 # encode knowledge on conditional independence
 gform <- c(
@@ -61,7 +77,7 @@ gform <- c(
 )
 ```
 
-Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: `A1=A2=A3=A4=1` and `A1=A2=A3=A4=0`:
+Next, we need to define the counterfactual treatment regime of interest. Here, we are interested in the contrast between two static regimes: $A_1=A_2=A_3=A_4=1$ and $A_1=A_2=A_3=A_4=0$:
 
 ```{r}
 abar <- list(rep(1, K), rep(0, K))
@@ -85,4 +101,71 @@ Finally, we can summarize the results:
 
 ```{r}
 summary(fit_ltmle)
+```
+
+The true estimand of this DGP is 0.34, which is indeed close to our estimate.
+
+## Estimating the effect of a static treatment regime using DeepLTMLE
+
+First, let's load the required packages. The python package `dltmle` implements the DeepLTMLE.
+```{python}
+#| eval: false
+import dltmle
+import numpy as np
+import pandas as pd
+```
+
+```{python}
+#| eval: false
+data = pd.read_csv("data/data_ltmle.csv")
+data = data.fillna(0)
+cols_to_flip = [col for col in data.columns if col.startswith('C')]
+data[cols_to_flip] = 1 - data[cols_to_flip]
+
+W_df = data[[col for col in data.columns if col.startswith("W")]]
+L_df = data[[col for col in data.columns if col.startswith("L")]]
+A_df = data[[col for col in data.columns if col.startswith("A")]]
+C_df = data[[col for col in data.columns if col.startswith("C")]]
+Y_df = data[[col for col in data.columns if col.startswith("Y")]]
+
+W = W_df.to_numpy(dtype=np.float32, copy=True)
+L = L_df.to_numpy(dtype=np.float32, copy=True)[..., np.newaxis]
+A = A_df.to_numpy(dtype=np.int64, copy=True)[..., np.newaxis]
+C = C_df.to_numpy(dtype=np.int64, copy=True)[..., np.newaxis]
+Y = Y_df.to_numpy(dtype=np.float32, copy=True)[..., np.newaxis]
+```
+
+```{python}
+#| eval: false
+hparams_candidates = {
+    'dim_emb': [8, 16],
+    'dim_emb_time': [4, 8],
+    'dim_emb_type': [4, 8],
+    'hidden_size': [8, 16, 32],
+    'num_layers': [1, 2, 4],
+    'nhead': [2, 4],
+    'dropout': [0, 0.1, 0.2],
+    'learning_rate': [1e-3, 5e-4, 1e-4, 5e-5],
+    'alpha': [0.05, 0.1, 0.5, 1],
+    'beta': [0.05, 0.1, 0.5, 1],
+    'max_epochs': [100],
+    'batch_size': [64],
+}
+```
+
+```{python}
+#| eval: false
+hparams = dltmle.tune(0, hparams_candidates, W, L, A, C, Y, n_trials=10)
+```
+
+```{python}
+#| eval: false
+psi_0 = dltmle.fit(0, hparams, W, L, A, C, Y, np.zeros_like(A))
+psi_1 = dltmle.fit(0, hparams, W, L, A, C, Y, np.ones_like(A))
+
+print('mean counterfactual outcome under a = 0', psi_0)
+print('mean counterfactual outcome under a = 1', psi_1)
+print('ATE (risk difference)', psi_1 - psi_0)
+print('risk ratio', psi_1 / psi_0)
+print('odds ratio', (psi_1 / (1 - psi_1)) / (psi_0 / (1 - psi_0)))
 ```

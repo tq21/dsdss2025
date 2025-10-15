@@ -1,0 +1,12 @@
+alpha: 1
+batch_size: 64
+beta: 1
+dim_emb: 8
+dim_emb_time: 8
+dim_emb_type: 4
+dropout: 0.1
+hidden_size: 32
+learning_rate: 0.0001
+max_epochs: 100
+nhead: 2
+num_layers: 2
