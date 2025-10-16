@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark van der Laan (UC Berkeley) and Sky Qiu (UC Berkeley)">
-<meta name="dcterms.date" content="2025-10-15">
+<meta name="dcterms.date" content="2025-10-16">
 
 <title>Highly Adaptive Lasso and Targeted Learning 📿🎯 – DahShu Data Science Symposium 2025</title>
 <style>
@@ -179,7 +179,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 15, 2025</p>
+      <p class="date">October 16, 2025</p>
     </div>
   </div>
   
@@ -203,21 +203,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td><strong>Time</strong></td>
 <td><strong>Topic</strong></td>
-<td><strong>Links to materials</strong></td>
 </tr>
 <tr class="even">
 <td>9am-10.20am</td>
-<td>Introduction to Targeted Learning; The Roadmap; Super Learning; TMLE</td>
-<td></td>
+<td>Introduction to Targeted Learning; The Roadmap; Super Learning; TMLE; L-TMLE.</td>
 </tr>
 <tr class="odd">
-<td>10.20am-10.40am</td>
-<td>Coffee/Tea break, Q&amp;A</td>
-<td></td>
+<td>10.20am-10.30am</td>
+<td>Coffee/Tea break, Q&amp;A.</td>
 </tr>
 <tr class="even">
-<td>10.40am-12pm</td>
-<td>Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, <code>hal9001</code> software</td>
+<td>10.40am-11.40am</td>
+<td><p>Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, higher order splines, examples of 1st and 2nd order HAL, rate of convergence.</p>
+<ul>
+<li>Examples of the k-th order spline representation: <a href="./k1d3.html">[k=1, d=3]</a>, <a href="./k2d3.html">[k=2, d=3]</a></li>
+</ul></td>
+</tr>
+<tr class="odd">
+<td>11.40am-11.50am</td>
+<td>Coffee/Tea break, Q&amp;A.</td>
+</tr>
+<tr class="even">
+<td>11.50am-12.30pm</td>
+<td>Efficient HAL-TMLE; Undersmoothed HAL-MLE; Nonparametric bootstrap; Profile-TMLE; Adaptive-TMLE.</td>
+</tr>
+<tr class="odd">
+<td>12.30pm-1.30pm</td>
+<td>Lunch break</td>
+</tr>
+<tr class="even">
+<td>1.30pm-2.20pm</td>
 <td><ul>
 <li><code>hal9001</code> <a href="https://tlverse.org/hal9001/articles/intro_hal9001.html">[vignette]</a></li>
 <li>Introduction to <code>hal9001</code> <a href="./hal_intro.html">[code example]</a></li>
@@ -226,46 +241,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></td>
 </tr>
 <tr class="odd">
-<td>12pm-1pm</td>
-<td>Lunch break</td>
-<td></td>
-</tr>
-<tr class="even">
-<td>1pm-2.20pm</td>
-<td>Higher order splines, examples of 1st and 2nd order HAL, rate of convergence, HAL-TMLE</td>
-<td><ul>
-<li>Examples of the k-th order spline representation: <a href="./k1d3.html">[k=1, d=3]</a>, <a href="./k2d3.html">[k=2, d=3]</a></li>
-<li>Specifying a diverse super learner library including different specifications (smoothness orders, subspaces) of candidate HAL learners <a href="./hal_dsl.html">[code example]</a></li>
-</ul></td>
-</tr>
-<tr class="odd">
 <td>2.20pm-2.30pm</td>
-<td>Coffee/Tea break, Q&amp;A</td>
-<td></td>
+<td>Coffee/Tea break, Q&amp;A.</td>
 </tr>
 <tr class="even">
-<td>2.30pm-3.30pm</td>
-<td>HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs</td>
+<td>2.30pm-3.20pm</td>
 <td><ul>
-<li>Adaptive-TMLE for augmenting an RCT with external RWD <a href="./atmle.html">[code example]</a></li>
+<li>Specifying a diverse super learner library including different specifications (smoothness orders, subspaces) of candidate HAL learners <a href="./hal_dsl.html">[code example]</a></li>
+<li>Estimating effect of counterfactual treatment regimes in longitudinal data with <code>ltmle</code> and <code>dltmle</code> <a href="./ltmle.html">[code example]</a></li>
 </ul></td>
 </tr>
 <tr class="odd">
 <td>3.30pm-3.40pm</td>
-<td>Coffee/Tea break, Q&amp;A</td>
-<td></td>
+<td>Coffee/Tea break, Q&amp;A.</td>
 </tr>
 <tr class="even">
 <td>3.40pm-4.40pm</td>
-<td>L-TMLE, new advancements in TMLE: Deep L-TMLE, Profile-TMLE</td>
-<td><ul>
-<li>Estimating effect of counterfactual treatment regimes in longitudinal data with <code>ltmle</code> and <code>dltmle</code> <a href="./ltmle.html">[code example]</a></li>
+<td><p>HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs:</p>
+<ul>
+<li>Adaptive-TMLE for augmenting an RCT with external RWD <a href="./atmle.html">[code example]</a></li>
 </ul></td>
 </tr>
 <tr class="odd">
 <td>4.40pm-5pm</td>
 <td>Closing remarks, Q&amp;A</td>
-<td></td>
 </tr>
 </tbody>
 </table>
