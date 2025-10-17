@@ -287,9 +287,9 @@ window.Quarto = {
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify formulas</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>formula_Q_1 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(.,., <span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>formula_Q_2 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>formula_Q_2 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(A, <span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">h</span>(A,W1,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>) <span class="sc">+</span> <span class="fu">h</span>(A,W3,<span class="at">s=</span><span class="dv">0</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>formula_Q_3 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">1</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>formula_Q_3 <span class="ot">&lt;-</span> <span class="er">~</span> <span class="fu">h</span>(W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(W2,<span class="at">s=</span><span class="dv">1</span>) <span class="sc">+</span> <span class="fu">h</span>(W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">20</span>) <span class="sc">+</span> <span class="fu">h</span>(A, <span class="at">s=</span><span class="dv">0</span>) <span class="sc">+</span></span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">h</span>(A,W1,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>) <span class="sc">+</span> <span class="fu">h</span>(A,W3,<span class="at">s=</span><span class="dv">1</span>,<span class="at">k=</span><span class="dv">10</span>)</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># define candidate HAL learners</span></span>
@@ -329,7 +329,7 @@ window.Quarto = {
 <span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>Q0W <span class="ot">&lt;-</span> fit_Q<span class="sc">$</span><span class="fu">predict</span>(task_Q0) <span class="co"># E(Y|A=0,W)</span></span>
 <span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(Q1W<span class="sc">-</span>Q0W)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.6879507</code></pre>
+<pre><code>[1] 0.6876823</code></pre>
 </div>
 </div>
 </section>
@@ -349,7 +349,7 @@ window.Quarto = {
 <div class="cell-output cell-output-stdout">
 <pre><code> Initial estimation of Q
      Procedure: user-supplied values
-     Cross-validated R squared :  0.3917 
+     Cross-validated R squared :  0.3904 
 
  Estimation of g (treatment mechanism)
      Procedure: user-supplied values, ensemble
@@ -365,22 +365,22 @@ window.Quarto = {
  Bounds on g for ATT/ATC: (0.036, 0.964) 
 
  Marginal Mean under Treatment (EY1)
-   Parameter Estimate:  1.7267
-   Estimated Variance:  0.0045823
+   Parameter Estimate:  1.7269
+   Estimated Variance:  0.0045802
               p-value:  &lt;2e-16
-    95% Conf Interval:  (1.5941, 1.8594)
+    95% Conf Interval:  (1.5942, 1.8595)
 
  Marginal Mean under Comparator (EY0)
-   Parameter Estimate:  1.0287
-   Estimated Variance:  0.0063683
+   Parameter Estimate:  1.029
+   Estimated Variance:  0.0063751
               p-value:  &lt;2e-16
-    95% Conf Interval:  (0.87233, 1.1851)
+    95% Conf Interval:  (0.87253, 1.1855)
 
  Additive Effect
-   Parameter Estimate:  0.69801
-   Estimated Variance:  0.0088148
-              p-value:  1.0493e-13
-    95% Conf Interval:  (0.51399, 0.88202)</code></pre>
+   Parameter Estimate:  0.69787
+   Estimated Variance:  0.0088281
+              p-value:  1.1069e-13
+    95% Conf Interval:  (0.51372, 0.88202)</code></pre>
 </div>
 </div>
 <p>The true ATE is 0.72 for this DGP.</p>

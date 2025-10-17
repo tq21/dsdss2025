@@ -79,9 +79,9 @@ Now, let's build a super learner library for the outcome regression $Q(A,W)=E(Y\
 ```{r}
 # specify formulas
 formula_Q_1 <- ~ h(., s=0,k=20) + h(.,., s=0,k=20)
-formula_Q_2 <- ~ h(W1,s=0,k=20) + h(W2,s=0) + h(W3,s=0,k=20) + 
+formula_Q_2 <- ~ h(W1,s=0,k=20) + h(W2,s=0) + h(W3,s=0,k=20) + h(A, s=0) +
   h(A,W1,s=0,k=10) + h(A,W3,s=0,k=10)
-formula_Q_3 <- ~ h(W1,s=1,k=20) + h(W2,s=1) + h(W3,s=1,k=20) + 
+formula_Q_3 <- ~ h(W1,s=1,k=20) + h(W2,s=1) + h(W3,s=1,k=20) + h(A, s=0) +
   h(A,W1,s=1,k=10) + h(A,W3,s=1,k=10)
 
 # define candidate HAL learners
