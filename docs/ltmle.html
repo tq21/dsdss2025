@@ -176,7 +176,7 @@ window.Quarto = {
   <li><a href="#loading-required-packages" id="toc-loading-required-packages" class="nav-link" data-scroll-target="#loading-required-packages">Loading required packages</a></li>
   <li><a href="#data-and-statistical-model" id="toc-data-and-statistical-model" class="nav-link" data-scroll-target="#data-and-statistical-model">Data and statistical model</a></li>
   <li><a href="#estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle" id="toc-estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle" class="nav-link" data-scroll-target="#estimating-the-causal-contrasts-of-two-static-treatment-regimes-using-ltmle">Estimating the causal contrasts of two static treatment regimes using ltmle</a></li>
-  <li><a href="#estimating-the-effect-of-a-static-treatment-regime-using-deepltmle" id="toc-estimating-the-effect-of-a-static-treatment-regime-using-deepltmle" class="nav-link" data-scroll-target="#estimating-the-effect-of-a-static-treatment-regime-using-deepltmle">Estimating the effect of a static treatment regime using DeepLTMLE</a></li>
+  <li><a href="#deepltmle" id="toc-deepltmle" class="nav-link" data-scroll-target="#deepltmle">DeepLTMLE</a></li>
   </ul>
 </nav>
     </div>
@@ -382,60 +382,40 @@ Odds Ratio:
 </div>
 <p>The true estimand of this DGP is 0.34, which is indeed close to our estimate.</p>
 </section>
-<section id="estimating-the-effect-of-a-static-treatment-regime-using-deepltmle" class="level2">
-<h2 class="anchored" data-anchor-id="estimating-the-effect-of-a-static-treatment-regime-using-deepltmle">Estimating the effect of a static treatment regime using DeepLTMLE</h2>
-<p>First, let’s load the required packages. The python package <code>dltmle</code> implements the DeepLTMLE.</p>
+<section id="deepltmle" class="level2">
+<h2 class="anchored" data-anchor-id="deepltmle">DeepLTMLE</h2>
+<p>The python package <code>dltmle</code> implements the DeepLTMLE.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> dltmle</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pd.read_csv(<span class="st">"data/data_ltmle.csv"</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> data.fillna(<span class="dv">0</span>)</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>cols_to_flip <span class="op">=</span> [col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">'C'</span>)]</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>data[cols_to_flip] <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> data[cols_to_flip]</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>W_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"W"</span>)]]</span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>L_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"L"</span>)]]</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>A_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"A"</span>)]]</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>C_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"C"</span>)]]</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>Y_df <span class="op">=</span> data[[col <span class="cf">for</span> col <span class="kw">in</span> data.columns <span class="cf">if</span> col.startswith(<span class="st">"Y"</span>)]]</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>W <span class="op">=</span> W_df.to_numpy(dtype<span class="op">=</span>np.float32, copy<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>L <span class="op">=</span> L_df.to_numpy(dtype<span class="op">=</span>np.float32, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> A_df.to_numpy(dtype<span class="op">=</span>np.int64, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> C_df.to_numpy(dtype<span class="op">=</span>np.int64, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> Y_df.to_numpy(dtype<span class="op">=</span>np.float32, copy<span class="op">=</span><span class="va">True</span>)[..., np.newaxis]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>hparams_candidates <span class="op">=</span> {</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb'</span>: [<span class="dv">8</span>, <span class="dv">16</span>],</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb_time'</span>: [<span class="dv">4</span>, <span class="dv">8</span>],</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb_type'</span>: [<span class="dv">4</span>, <span class="dv">8</span>],</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'hidden_size'</span>: [<span class="dv">8</span>, <span class="dv">16</span>, <span class="dv">32</span>],</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'num_layers'</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'nhead'</span>: [<span class="dv">2</span>, <span class="dv">4</span>],</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dropout'</span>: [<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>],</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'learning_rate'</span>: [<span class="fl">1e-3</span>, <span class="fl">5e-4</span>, <span class="fl">1e-4</span>, <span class="fl">5e-5</span>],</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'alpha'</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="dv">1</span>],</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'beta'</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="dv">1</span>],</span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'max_epochs'</span>: [<span class="dv">100</span>],</span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'batch_size'</span>: [<span class="dv">64</span>],</span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>hparams <span class="op">=</span> dltmle.tune(<span class="dv">0</span>, hparams_candidates, W, L, A, C, Y, n_trials<span class="op">=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>psi_0 <span class="op">=</span> dltmle.fit(<span class="dv">0</span>, hparams, W, L, A, C, Y, np.zeros_like(A))</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>psi_1 <span class="op">=</span> dltmle.fit(<span class="dv">0</span>, hparams, W, L, A, C, Y, np.ones_like(A))</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'mean counterfactual outcome under a = 0'</span>, psi_0)</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'mean counterfactual outcome under a = 1'</span>, psi_1)</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'ATE (risk difference)'</span>, psi_1 <span class="op">-</span> psi_0)</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'risk ratio'</span>, psi_1 <span class="op">/</span> psi_0)</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'odds ratio'</span>, (psi_1 <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> psi_1)) <span class="op">/</span> (psi_0 <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> psi_0)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>W, L, A, C, Y <span class="op">=</span> dltmle.example_dgp(np.random.default_rng(<span class="dv">0</span>), <span class="dv">1000</span>, <span class="dv">10</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>hparams_candidates <span class="op">=</span> {</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb'</span>: [<span class="dv">8</span>, <span class="dv">16</span>],</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb_time'</span>: [<span class="dv">4</span>, <span class="dv">8</span>],</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dim_emb_type'</span>: [<span class="dv">4</span>, <span class="dv">8</span>],</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'hidden_size'</span>: [<span class="dv">8</span>, <span class="dv">16</span>, <span class="dv">32</span>],</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'num_layers'</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'nhead'</span>: [<span class="dv">2</span>, <span class="dv">4</span>],</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dropout'</span>: [<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>],</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'learning_rate'</span>: [<span class="fl">1e-3</span>, <span class="fl">5e-4</span>, <span class="fl">1e-4</span>, <span class="fl">5e-5</span>],</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'alpha'</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="dv">1</span>],</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'beta'</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="dv">1</span>],</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'max_epochs'</span>: [<span class="dv">100</span>],</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'batch_size'</span>: [<span class="dv">64</span>],</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>hparams <span class="op">=</span> dltmle.tune(<span class="dv">0</span>, hparams_candidates, W, L, A, C, Y)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>psi_0 <span class="op">=</span> dltmle.fit(<span class="dv">0</span>, hparams, W, L, A, C, Y, np.zeros_like(A))</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>psi_1 <span class="op">=</span> dltmle.fit(<span class="dv">0</span>, hparams, W, L, A, C, Y, np.ones_like(A))</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'mean counterfactual outcome under a = 0'</span>, psi_0)</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'mean counterfactual outcome under a = 1'</span>, psi_1)</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'ATE (risk difference)'</span>, psi_1 <span class="op">-</span> psi_0)</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'risk ratio'</span>, psi_1 <span class="op">/</span> psi_0)</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'odds ratio'</span>, (psi_1 <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> psi_1)) <span class="op">/</span> (psi_0 <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> psi_0)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
