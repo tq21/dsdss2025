@@ -21,15 +21,15 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 10.20am-10.30am | Coffee/Tea break, Q&A.                                                                                                                                                             |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 10.40am-11.40am | Introduction to Highly Adaptive Lasso: cadlag functions, zero-order spline HAL, rate of convergence, higher order splines, examples of 1st and 2nd order HAL, rate of convergence. |
+| 10.30am-11.50am | Introduction to Highly Adaptive Lasso; Cadlag functions; Zero-order spline HAL, rate of convergence; Higher order splines, examples of 1st and 2nd order HAL, rate of convergence. |
 |                 |                                                                                                                                                                                    |
 |                 | -   Examples of the k-th order spline representation: [\[k=1, d=3\]](k1d3.qmd), [\[k=2, d=3\]](k2d3.qmd)                                                                           |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 11.40am-11.50am | Coffee/Tea break, Q&A.                                                                                                                                                             |
+| 11.50am-12.00pm | Coffee/Tea break, Q&A.                                                                                                                                                             |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 11.50am-12.30pm | Efficient HAL-TMLE; Undersmoothed HAL-MLE; Nonparametric bootstrap; Profile-TMLE; Adaptive-TMLE.                                                                                   |
+| 12.00pm-12.30pm | Efficient HAL-TMLE; Undersmoothed HAL-MLE; Nonparametric bootstrap; Profile-TMLE; Adaptive-TMLE.                                                                                   |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 12.30pm-1.30pm  | Lunch break                                                                                                                                                                        |
+| 12.30pm-1.30pm  | Lunch break.                                                                                                                                                                       |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 1.30pm-2.20pm   | -   `hal9001` [\[vignette\]](https://tlverse.org/hal9001/articles/intro_hal9001.html)                                                                                              |
 |                 | -   Introduction to `hal9001` [\[code example\]](hal_intro.qmd)                                                                                                                    |
@@ -41,13 +41,13 @@ Here is the schedule for the day (9am-5pm, October 18th, 2025):
 | 2.30pm-3.20pm   | -   Specifying a diverse super learner library including different specifications (smoothness orders, subspaces) of candidate HAL learners [\[code example\]](hal_dsl.qmd)         |
 |                 | -   Estimating effect of counterfactual treatment regimes in longitudinal data with `ltmle` and `dltmle` [\[code example\]](ltmle.qmd)                                             |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 3.30pm-3.40pm   | Coffee/Tea break, Q&A.                                                                                                                                                             |
+| 3.20pm-3.30pm   | Coffee/Tea break, Q&A.                                                                                                                                                             |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 3.40pm-4.40pm   | HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs:                                                                                                                   |
+| 3.30pm-4.30pm   | HAL-based adaptive-TMLE, applications to RCT-RWD hybrid designs:                                                                                                                   |
 |                 |                                                                                                                                                                                    |
 |                 | -   Adaptive-TMLE for augmenting an RCT with external RWD [\[code example\]](atmle.qmd)                                                                                            |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 4.40pm-5pm      | Closing remarks, Q&A                                                                                                                                                               |
+| 4.30pm-5pm      | Closing remarks, Q&A                                                                                                                                                               |
 +-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 ## Environment setup
